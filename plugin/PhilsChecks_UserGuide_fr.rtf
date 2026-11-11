@@ -1,0 +1,32 @@
+{\rtf1\ansi\ansicpg1252\deff0\nouicompat{\fonttbl{\f0\fswiss\fcharset0 Arial;}}
+\viewkind4\uc1
+\pard\sa200\sl276\slmult1\f0\fs28\b V\'c9RIFICATIONS PERSONNALIS\'c9ES (CMS) DE PHIL 1.5 (MODULE D'EXTENSION DE PARATEXT)\b0\fs22\par
+\par
+\b OBJET\b0\par
+V\'e9rifications personnalis\'e9es (cms) de Phil est un module d'extension de Paratext. Il affiche les v\'e9rifications personnalis\'e9es de Phil et ex\'e9cute celle que vous choisissez. Les v\'e9rifications viennent avec le module : rien n'est \'e0 copier dans le dossier cms du dossier des projets Paratext.\par
+Les v\'e9rifications sont en anglais ou en espagnol (il n'y en a pas encore en fran\'e7ais). Parmi elles :\par
+\tab Report of TOC, Report of Titles et le rapport des intertitres.\par
+\tab Guillemets, erreurs de \\q, styles imbriqu\'e9s, espaces autour des marqueurs et notes de bas de page.\par
+\tab L\'e9gendes des illustrations, majuscules en d\'e9but de verset ou en milieu de phrase, verset 1 court, r\'e9f\'e9rences sans marqueurs.\par
+\tab All Reports, qui r\'e9unit dix des rapports dans une page HTML.\par
+\tab Quotation Matcher, Compare and Copy Figures, Case Convert et Convert Codes, qui peuvent modifier le texte.\par
+\par
+\b INSTALLATION\b0\par
+1. T\'e9l\'e9chargez le fichier zip du module.\par
+2. Extrayez le fichier zip dans un dossier de votre choix (clic droit sur le fichier zip, puis Extraire tout...).\par
+3. Fermez Paratext.\par
+4. Dans le dossier extrait, double-cliquez sur Install-Plugin.cmd et autorisez-le \'e0 apporter des modifications. Il s'installe dans chaque Paratext 9 de l'ordinateur. Check-Plugin.cmd ne fait qu'un rapport ; Uninstall-Plugin.cmd retire le module.\par
+\par
+\b UTILISATION\b0\par
+1. Ouvrez le projet dans une fen\'eatre d'\'c9criture et choisissez Outils > V\'e9rifications personnalis\'e9es (cms) de Phil...\par
+2. Choisissez la langue des v\'e9rifications : anglais ou espagnol. Une v\'e9rification qui n'existe qu'en anglais porte la mention \'ab (en anglais seulement) \'bb. Votre choix est m\'e9moris\'e9.\par
+3. S\'e9lectionnez une v\'e9rification. Sa description s'affiche sous la liste. Aide affiche l'aide de la v\'e9rification, quand il y en a une, dans une fen\'eatre \'e0 part, sans avoir besoin de Word (le bouton Aide de la fen\'eatre de v\'e9rification de Paratext fait de m\'eame). Une v\'e9rification espagnole sans aide propre affiche l'aide en anglais.\par
+4. Cliquez sur Ex\'e9cuter... (ou double-cliquez sur la v\'e9rification). La fen\'eatre de v\'e9rification de Paratext s'ouvre, comme depuis le menu des v\'e9rifications de Paratext : choisissez les livres, r\'e9glez les options et cliquez sur OK.\par
+5. Les r\'e9sultats s'affichent comme d'habitude : dans la fen\'eatre de liste de Paratext et, pour certaines v\'e9rifications, aussi dans un rapport HTML.\par
+La colonne \'ab Type \'bb indique \'ab Modifie le texte \'bb pour les v\'e9rifications qui peuvent modifier un projet. Paratext demande alors le projet o\'f9 \'e9crire et n'ex\'e9cute la v\'e9rification que si vous pouvez le modifier.\par
+\par
+\b O\'d9 SONT GARD\'c9ES LES V\'c9RIFICATIONS\b0\par
+Avant chaque ex\'e9cution, le module \'e9crit les v\'e9rifications dans %LOCALAPPDATA%\\PhilsChecks\\checks (un dossier par langue). Il compare chaque fichier avec la copie que contient le module, r\'e9\'e9crit ceux qui diff\'e8rent et retire tout autre fichier ; seules les v\'e9rifications fournies avec le module peuvent donc s'ex\'e9cuter.\par
+Les v\'e9rifications s'ex\'e9cutent avec l'outil de v\'e9rification de Paratext. Une v\'e9rification du m\'eame nom dans votre dossier cms n'est pas utilis\'e9e : la copie du module passe en premier. Les fichiers temporaires de Paratext (checktext.*) sont toujours \'e9crits dans le dossier cms, comme pour toute v\'e9rification.\par
+Si Paratext est mis \'e0 jour et que le module ne trouve plus la fen\'eatre de v\'e9rification de Paratext, il le signale et n'ex\'e9cute rien.\par
+}

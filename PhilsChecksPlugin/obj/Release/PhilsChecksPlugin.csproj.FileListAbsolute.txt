@@ -1,0 +1,5 @@
+c:\ClaudeCode Projects\Phils_Checks\PhilsChecksPlugin\bin\Release\PhilsChecksPlugin.dll
+c:\ClaudeCode Projects\Phils_Checks\PhilsChecksPlugin\bin\Release\PhilsChecksPlugin.pdb
+c:\ClaudeCode Projects\Phils_Checks\PhilsChecksPlugin\obj\Release\PhilsChecksPlugin.csprojResolveAssemblyReference.cache
+c:\ClaudeCode Projects\Phils_Checks\PhilsChecksPlugin\obj\Release\PhilsChecksPlugin.dll
+c:\ClaudeCode Projects\Phils_Checks\PhilsChecksPlugin\obj\Release\PhilsChecksPlugin.pdb

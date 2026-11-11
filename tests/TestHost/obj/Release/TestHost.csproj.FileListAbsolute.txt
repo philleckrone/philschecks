@@ -1,0 +1,13 @@
+C:\ClaudeCode Projects\Phils_Checks\tests\TestHost\bin\Release\checks.zip
+C:\ClaudeCode Projects\Phils_Checks\tests\TestHost\bin\Release\PhilsChecksTestHost.exe
+C:\ClaudeCode Projects\Phils_Checks\tests\TestHost\bin\Release\PhilsChecksTestHost.pdb
+C:\ClaudeCode Projects\Phils_Checks\tests\TestHost\bin\Release\mscorlib.dll
+C:\ClaudeCode Projects\Phils_Checks\tests\TestHost\bin\Release\es\mscorlib.resources.dll
+C:\ClaudeCode Projects\Phils_Checks\tests\TestHost\bin\Release\normidna.nlp
+C:\ClaudeCode Projects\Phils_Checks\tests\TestHost\bin\Release\normnfc.nlp
+C:\ClaudeCode Projects\Phils_Checks\tests\TestHost\bin\Release\normnfd.nlp
+C:\ClaudeCode Projects\Phils_Checks\tests\TestHost\bin\Release\normnfkc.nlp
+C:\ClaudeCode Projects\Phils_Checks\tests\TestHost\bin\Release\normnfkd.nlp
+C:\ClaudeCode Projects\Phils_Checks\tests\TestHost\obj\Release\TestHost.csprojResolveAssemblyReference.cache
+C:\ClaudeCode Projects\Phils_Checks\tests\TestHost\obj\Release\PhilsChecksTestHost.exe
+C:\ClaudeCode Projects\Phils_Checks\tests\TestHost\obj\Release\PhilsChecksTestHost.pdb

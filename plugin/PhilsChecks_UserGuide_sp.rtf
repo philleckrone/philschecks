@@ -1,0 +1,32 @@
+{\rtf1\ansi\ansicpg1252\deff0\nouicompat{\fonttbl{\f0\fswiss\fcharset0 Arial;}}
+\viewkind4\uc1
+\pard\sa200\sl276\slmult1\f0\fs28\b VERIFICACIONES PERSONALIZADAS (CMS) DE PHIL 1.5 (COMPLEMENTO DE PARATEXT)\b0\fs22\par
+\par
+\b PROP\'d3SITO\b0\par
+Verificaciones personalizadas (cms) de Phil es un complemento de Paratext. Muestra las verificaciones personalizadas de Phil y ejecuta la que usted elija. Las verificaciones vienen con el complemento, as\'ed que no hay que copiar nada a la carpeta cms de la carpeta de proyectos de Paratext.\par
+Entre las verificaciones est\'e1n:\par
+\tab Informe de los TOC, Informe de los t\'edtulos y el informe de los encabezados de secci\'f3n.\par
+\tab Comillas, errores en \\q, estilos anidados, espacios en marcadores y notas al pie.\par
+\tab Leyendas de figuras, may\'fasculas al inicio de vers\'edculo o a mitad de oraci\'f3n, vers\'edculo 1 corto, referencias sin marcadores.\par
+\tab All Reports (solo en ingl\'e9s), que re\'fane diez de los informes en una p\'e1gina HTML.\par
+\tab Quotation Matcher, Comparar y copiar figuras, Case Convert y Convert Codes, que pueden cambiar el texto.\par
+\par
+\b INSTALACI\'d3N\b0\par
+1. Descargue el archivo zip del complemento.\par
+2. Extraiga el archivo zip en una carpeta de su elecci\'f3n (haga clic con el bot\'f3n derecho en el archivo zip y elija Extraer todo...).\par
+3. Cierre Paratext.\par
+4. En la carpeta extra\'edda, haga doble clic en Install-Plugin.cmd y permita que haga cambios. Se instala en cada Paratext 9 del equipo. Check-Plugin.cmd solo informa; Uninstall-Plugin.cmd quita el complemento.\par
+\par
+\b C\'d3MO USARLO\b0\par
+1. Abra el proyecto en una ventana de Escritura y elija Herramientas > Verificaciones personalizadas (cms) de Phil...\par
+2. Elija el idioma de las verificaciones: ingl\'e9s o espa\'f1ol. Una verificaci\'f3n que solo existe en ingl\'e9s lleva la marca "(solo en ingl\'e9s)". Su elecci\'f3n se recuerda.\par
+3. Seleccione una verificaci\'f3n. Su descripci\'f3n aparece debajo de la lista. Ayuda muestra la ayuda de la verificaci\'f3n, cuando la tiene, en una ventana propia, as\'ed que no se necesita Word (el bot\'f3n Ayuda de la ventana de verificaci\'f3n de Paratext hace lo mismo). Una verificaci\'f3n en espa\'f1ol sin ayuda propia muestra la ayuda en ingl\'e9s.\par
+4. Haga clic en Ejecutar... (o doble clic en la verificaci\'f3n). Se abre la ventana de verificaci\'f3n de Paratext, como en el men\'fa de verificaciones de Paratext: elija los libros, ajuste las opciones y haga clic en Aceptar.\par
+5. Los resultados aparecen como siempre: en la ventana de lista de Paratext y, en algunas verificaciones, tambi\'e9n en un informe HTML.\par
+La columna "Tipo" dice "Cambia el texto" en las verificaciones que pueden cambiar un proyecto. Paratext pide entonces el proyecto donde escribir y solo ejecuta la verificaci\'f3n si usted puede editarlo.\par
+\par
+\b D\'d3NDE SE GUARDAN LAS VERIFICACIONES\b0\par
+Antes de cada ejecuci\'f3n el complemento escribe las verificaciones en %LOCALAPPDATA%\\PhilsChecks\\checks (una carpeta por idioma). Compara cada archivo con la copia que lleva el complemento, vuelve a escribir los que difieren y quita cualquier otro archivo, as\'ed que solo se pueden ejecutar las verificaciones que vinieron con el complemento.\par
+Las verificaciones se ejecutan con el ejecutor de verificaciones de Paratext. Una verificaci\'f3n con el mismo nombre en su carpeta cms no se usa: la copia del complemento va primero. Los archivos temporales de Paratext (checktext.*) se siguen escribiendo en la carpeta cms, como para cualquier verificaci\'f3n.\par
+Si Paratext se actualiza y el complemento ya no encuentra la ventana de verificaci\'f3n de Paratext, lo dice y no ejecuta nada.\par
+}

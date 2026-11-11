@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props"
+          Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <!-- Test host only: never deployed. Builds the plugin's sources (all but the plugin class) into an exe. -->
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>PhilsChecksTests</RootNamespace>
+    <AssemblyName>PhilsChecksTestHost</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <LangVersion>5</LangVersion>
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <!-- 64-bit, like Paratext 9, so the reflect mode can load Paratext.exe. -->
+    <Prefer32Bit>false</Prefer32Bit>
+    <!-- Turns on test-only code in the linked sources (PC_ROOT, PC_SETTINGS). -->
+    <DefineConstants>$(DefineConstants);PC_TESTHOST</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\..\PhilsChecksPlugin\CheckBundle.cs">
+      <Link>CheckBundle.cs</Link>
+    </Compile>
+    <Compile Include="..\..\PhilsChecksPlugin\ChecksForm.cs">
+      <Link>ChecksForm.cs</Link>
+    </Compile>
+    <Compile Include="..\..\PhilsChecksPlugin\ParatextCms.cs">
+      <Link>ParatextCms.cs</Link>
+    </Compile>
+    <Compile Include="..\..\PhilsChecksPlugin\Strings.cs">
+      <Link>Strings.cs</Link>
+    </Compile>
+    <Compile Include="..\..\PhilsChecksPlugin\RtfViewer.cs">
+      <Link>RtfViewer.cs</Link>
+    </Compile>
+    <Compile Include="Program.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\PhilsChecksPlugin\Resources\checks.zip">
+      <Link>checks.zip</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

@@ -1,0 +1,32 @@
+{\rtf1\ansi\ansicpg1252\deff0\nouicompat{\fonttbl{\f0\fswiss\fcharset0 Arial;}}
+\viewkind4\uc1
+\pard\sa200\sl276\slmult1\f0\fs28\b PHILS CUSTOM (CMS) CHECKS 1.5 (PARATEXT PLUGIN)\b0\fs22\par
+\par
+\b PURPOSE\b0\par
+Phils Custom (cms) Checks is a Paratext plugin. It lists Phil's custom checks and runs the one you choose. The checks come with the plugin, so nothing has to be copied into the cms folder of the Paratext projects folder.\par
+The checks include, among others:\par
+\tab Report of TOC, Report of Titles and the section heading report.\par
+\tab Quotation marks, \\q errors, nested styles, marker spaces and footnotes.\par
+\tab Figure captions, capitals at the start of a verse or in mid-sentence, short verse 1, references without markers.\par
+\tab All Reports, which runs ten of the reports into one HTML page.\par
+\tab Quotation Matcher, Compare and Copy Figures, Case Convert and Convert Codes, which can change text.\par
+\par
+\b INSTALLING\b0\par
+1. Download the plugin's zip file.\par
+2. Extract the zip file to a folder of your choice (right-click the zip file and choose Extract All...).\par
+3. Close Paratext.\par
+4. In the extracted folder, double-click Install-Plugin.cmd and allow it to make changes. It installs into every Paratext 9 on the computer. Check-Plugin.cmd only reports; Uninstall-Plugin.cmd removes the plugin.\par
+\par
+\b HOW TO USE\b0\par
+1. Open the project in a Scripture window and choose Tools > Phils Custom (cms) Checks...\par
+2. Choose the language of the checks: English or Spanish. A check that exists only in English is marked "(English only)". Your choice is remembered.\par
+3. Select a check. Its description is shown below the list. Help shows the check's help, when it has one, in a window of its own, so Word is not needed (Paratext's Help button in the check window does the same). A Spanish check without help of its own shows the English one.\par
+4. Click Run... (or double-click the check). Paratext's own check window opens, as in Paratext's checks menu: choose the books, set the options and click OK.\par
+5. The results appear as usual: in Paratext's list window, and for some checks also in an HTML report.\par
+The "Kind" column says "Changes text" for checks that can change a project. Paratext then asks for the project to write into, and only runs the check if you may edit it.\par
+\par
+\b WHERE THE CHECKS ARE KEPT\b0\par
+Before each run the plugin writes the checks into %LOCALAPPDATA%\\PhilsChecks\\checks (one folder per language). It compares every file there with the copy inside the plugin, writes again any file that differs and removes any other file, so only the checks that came with the plugin can run.\par
+The checks run through Paratext's own check runner. A check with the same name in your cms folder is not used: the plugin's copy comes first. Paratext's temporary files (checktext.*) are still written to the cms folder, as for any check.\par
+If Paratext is updated and the plugin can no longer find Paratext's check window, it says so and runs nothing.\par
+}
