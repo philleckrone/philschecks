@@ -1,0 +1,3 @@
+["shared/pyre.js", "shared/usfm.js", "shared/sty.js", "shared/footnotes.js", "shared/runner.js",
+ "shared/report.js", "shared/strings.js", "checks/shortv1.js", "checks/titles.js", "checks/nested.js",
+ "checks/refnomark.js", "checks/qerrors.js", "checks/footnotes.js"]

@@ -1,0 +1,28 @@
+{
+  "mainMenu": {
+    "columns": {},
+    "groups": {},
+    "items": []
+  },
+  "webViewMenus": {
+    "platformScriptureEditor.react": {
+      "topMenu": {
+        "columns": {},
+        "groups": {},
+        "items": [
+          {
+            "label": "%philsChecks_menu_open%",
+            "localizeNotes": "Scripture editor top menu > Tools > Phils Custom (cms) Checks... (opens the window for the editor's project)",
+            "group": "platformScriptureEditor.checks",
+            "order": 20,
+            "command": "philsChecks.open"
+          }
+        ]
+      },
+      "contextMenu": {
+        "groups": {},
+        "items": []
+      }
+    }
+  }
+}

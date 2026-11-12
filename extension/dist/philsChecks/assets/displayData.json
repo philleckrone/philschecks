@@ -1,0 +1,22 @@
+{
+  "icon": "",
+  "moreInfoUrl": "",
+  "supportUrl": "",
+  "localizedDisplayInfo": {
+    "en": {
+      "displayName": "Phils Custom (cms) Checks",
+      "shortSummary": "Report checks ported from Phil's CMS checks",
+      "description": "assets/descriptions/description-en.md"
+    },
+    "es": {
+      "displayName": "Verificaciones personalizadas (cms) de Phil",
+      "shortSummary": "Verificaciones con informe traídas de las verificaciones CMS de Phil",
+      "description": "assets/descriptions/description-es.md"
+    },
+    "fr": {
+      "displayName": "Vérifications personnalisées (cms) de Phil",
+      "shortSummary": "Vérifications avec rapport reprises des vérifications CMS de Phil",
+      "description": "assets/descriptions/description-fr.md"
+    }
+  }
+}

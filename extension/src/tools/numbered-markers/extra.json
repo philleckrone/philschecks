@@ -1,0 +1,44 @@
+{
+  "en": {
+    "Opening": "Opening the project...",
+    "Reading": "Reading {0} ({1} of {2})...",
+    "Checking": "Counting the markers...",
+    "Writing": "Changing {0} ({1} of {2})...",
+    "Yes": "Yes",
+    "No": "No",
+    "ConfirmP10": "Change {0} in {1} book(s)?\n\nThe text of each book is first kept in the Phils Checks extension's storage (Paratext 10 does not let extensions add a point to the project history).",
+    "ResBackupsP10": "The old text of the {0} changed book(s) is kept in the Phils Checks extension's storage.",
+    "ResChanged": "Not changed, because the text changed after the scan (scan again, then try again): {0}",
+    "NoPermissionP10": "You do not have permission to edit this project, so these markers cannot be converted.",
+    "NotRead": "Not read: {0}",
+    "Rescan": "Scan again"
+  },
+  "es": {
+    "Opening": "Abriendo el proyecto...",
+    "Reading": "Leyendo {0} ({1} de {2})...",
+    "Checking": "Contando los marcadores...",
+    "Writing": "Cambiando {0} ({1} de {2})...",
+    "Yes": "Sí",
+    "No": "No",
+    "ConfirmP10": "¿Cambiar {0} en {1} libro(s)?\n\nEl texto de cada libro se guarda primero en el almacenamiento de la extensión Phils Checks (Paratext 10 no permite que las extensiones añadan un punto al historial del proyecto).",
+    "ResBackupsP10": "El texto anterior de los {0} libro(s) cambiados se guarda en el almacenamiento de la extensión Phils Checks.",
+    "ResChanged": "No se cambió, porque el texto cambió después del examen (examine de nuevo y vuelva a intentarlo): {0}",
+    "NoPermissionP10": "No tiene permiso para editar este proyecto, así que estos marcadores no se pueden convertir.",
+    "NotRead": "No se leyó: {0}",
+    "Rescan": "Examinar de nuevo"
+  },
+  "fr": {
+    "Opening": "Ouverture du projet...",
+    "Reading": "Lecture de {0} ({1} sur {2})...",
+    "Checking": "Comptage des marqueurs...",
+    "Writing": "Modification de {0} ({1} sur {2})...",
+    "Yes": "Oui",
+    "No": "Non",
+    "ConfirmP10": "Modifier {0} dans {1} livre(s) ?\n\nLe texte de chaque livre est d’abord conservé dans le stockage de l’extension Phils Checks (Paratext 10 ne permet pas aux extensions d’ajouter un point à l’historique du projet).",
+    "ResBackupsP10": "L’ancien texte des {0} livre(s) modifié(s) est conservé dans le stockage de l’extension Phils Checks.",
+    "ResChanged": "Non modifié, car le texte a changé après l’analyse (analysez à nouveau, puis réessayez) : {0}",
+    "NoPermissionP10": "Vous n’avez pas la permission de modifier ce projet, ces marqueurs ne peuvent donc pas être convertis.",
+    "NotRead": "Non lu : {0}",
+    "Rescan": "Analyser à nouveau"
+  }
+}

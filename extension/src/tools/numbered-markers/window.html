@@ -1,0 +1,212 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      /*COMMON_CSS*/
+      #intro {
+        max-width: 1000px;
+      }
+      td.num {
+        text-align: right;
+      }
+      td.small {
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="row"><b id="title"></b><span class="muted" id="project"></span></div>
+    <div id="intro" class="muted"></div>
+    <div class="row">
+      <label><input type="checkbox" id="oneForm" /> <span id="oneFormLabel"></span></label>
+      <span class="grow"></span>
+      <button id="books"></button>
+      <button id="rescan"></button>
+    </div>
+    <div id="warning" class="warn"></div>
+    <div class="gridbox" id="gridbox"><table class="grid" id="grid"></table></div>
+    <div id="consistent" class="muted"></div>
+    <div id="other" class="muted"></div>
+    <div class="row">
+      <button id="all"></button>
+      <button id="clear"></button>
+      <span class="grow"></span>
+      <button class="primary" id="convert"></button>
+    </div>
+    <div class="muted" id="resultsLabel"></div>
+    <textarea class="results" id="results" readonly></textarea>
+    <script>
+      /*COMMON_JS*/
+    </script>
+    <script>
+      let state = null; // the last scan
+      let books = [];
+      const ticks = new Map(); // family -> ticked
+      const chosen = new Map(); // family -> direction
+
+      function rows() {
+        if (!state) return [];
+        return state.mixed.concat($('oneForm').checked ? state.oneForm : []);
+      }
+
+      function draw() {
+        const table = $('grid');
+        table.innerHTML = '';
+        const list = rows();
+        const head = document.createElement('tr');
+        [S.ColConvert, S.ColMarker, S.ColKind, S.ColChangeTo, S.ColBare, S.ColLevels, S.ColOther, S.ColCan, S.ColCannot, S.ColWhere].forEach((h) => {
+          const th = document.createElement('th');
+          th.textContent = h;
+          head.appendChild(th);
+        });
+        table.appendChild(head);
+        list.forEach((r) => {
+          const dir = chosen.get(r.family) || r.defaultDirection;
+          const info = r.byDirection[dir];
+          const tr = document.createElement('tr');
+          if (r.kind === 'oneForm') tr.className = 'oneform';
+          const tick = document.createElement('input');
+          tick.type = 'checkbox';
+          tick.checked = !!ticks.get(r.family);
+          tick.disabled = !info.canConvert;
+          tick.addEventListener('change', () => {
+            ticks.set(r.family, tick.checked);
+            updateButtons();
+          });
+          let change;
+          if (r.directions.length > 1) {
+            change = document.createElement('select');
+            r.directions.forEach((d) => {
+              const o = document.createElement('option');
+              o.value = d;
+              o.textContent = r.byDirection[d].label;
+              change.appendChild(o);
+            });
+            change.value = dir;
+            change.addEventListener('change', () => {
+              chosen.set(r.family, change.value);
+              draw();
+            });
+          } else {
+            change = document.createElement('span');
+            change.textContent = info.label;
+          }
+          const cells = [tick, '\\' + r.family, r.kind === 'mixed' ? S.KindMixed : S.KindOneForm, change, r.bare, r.levels, r.other, info.canConvert, info.cannotEdit, info.where];
+          cells.forEach((c, i) => {
+            const td = document.createElement('td');
+            if (c instanceof Node) td.appendChild(c);
+            else td.textContent = c;
+            if (i === 4) td.className = 'num';
+            if (i >= 7) td.className = 'small';
+            tr.appendChild(td);
+          });
+          table.appendChild(tr);
+        });
+        $('warning').textContent = warning(list);
+        $('consistent').textContent = fmt(S.ConsistentHeader, state && state.consistent ? state.consistent : S.ConsistentNone);
+        $('other').textContent = state && state.showOther ? S.OtherNote : '';
+        updateButtons();
+      }
+
+      function warning(list) {
+        if (!state) return '';
+        if (list.length === 0 || state.mixed.length === 0) return S.MixedNone;
+        if (!state.canEdit) return S.NoPermissionP10;
+        return '';
+      }
+
+      function tickedChoices() {
+        const out = {};
+        rows().forEach((r) => {
+          if (ticks.get(r.family)) out[r.family] = chosen.get(r.family) || r.defaultDirection;
+        });
+        return out;
+      }
+
+      function updateButtons() {
+        const can = !!state && state.canEdit && rows().length > 0;
+        $('all').disabled = !can || state.mixed.length === 0;
+        $('clear').disabled = !can;
+        $('convert').disabled = !can;
+      }
+
+      async function scan() {
+        $('results').value = $('results').value || '';
+        try {
+          books = await cmd('books', BOOT.projectId);
+          $('books').textContent = booksLabel(books);
+          state = await withProgress($('gridbox'), S.Opening, 'scan');
+          if (state.failed.length > 0) $('results').value = fmt(S.NotRead, state.failed.join('; '));
+        } catch (e) {
+          state = null;
+          $('results').value = fmt(S.Error, e && e.message ? e.message : e);
+        }
+        draw();
+      }
+
+      async function convert() {
+        const choices = tickedChoices();
+        const names = Object.keys(choices);
+        if (names.length === 0) {
+          await tell(S.NothingSelected);
+          return;
+        }
+        const label = names.map((n) => fmt(choices[n] === 'RemoveNumber' ? S.DirRemove : S.DirAdd, n)).join(', ');
+        const bookSet = new Set();
+        rows().forEach((r) => {
+          if (choices[r.family]) r.byDirection[choices[r.family]].canConvert.split(', ').filter(Boolean).forEach((b) => bookSet.add(b));
+        });
+        if (!(await ask(fmt(S.ConfirmP10, label, bookSet.size)))) return;
+        let report;
+        try {
+          report = await withProgress($('gridbox'), S.Opening, 'apply', { choices });
+        } catch (e) {
+          await tell(fmt(S.Error, e && e.message ? e.message : e));
+          return;
+        }
+        const lines = [];
+        report.changes.forEach((c) => lines.push(fmt(c.direction === 'RemoveNumber' ? S.ResChangeRemove : S.ResChange, c.book, c.family, c.count)));
+        lines.push(report.changes.length > 0 ? fmt(S.ResTotal, report.total, report.booksChanged) : S.ResNothing);
+        if (report.noPermission.length > 0) lines.push(fmt(S.ResNoPermission, report.noPermission.join(', ')));
+        if (report.changed.length > 0) lines.push(fmt(S.ResChanged, report.changed.join(', ')));
+        report.failed.forEach((f) => lines.push(fmt(S.ResFailed, f)));
+        if (report.backups > 0) lines.push(fmt(S.ResBackupsP10, report.backups));
+        ticks.clear();
+        await scan();
+        $('results').value = lines.join('\n');
+      }
+
+      async function chooseAndRescan() {
+        const excluded = await chooseBooks(books);
+        if (excluded === null) return;
+        await cmd('saveBooks', BOOT.projectId, excluded);
+        await scan();
+      }
+
+      $('title').textContent = S.Title + ' ' + (BOOT.version || '');
+      $('project').textContent = BOOT.projectName ? fmt(S.ProjectLabel, BOOT.projectName) : '';
+      $('intro').textContent = S.Intro + ' ' + S.IntroRemove;
+      $('oneFormLabel').textContent = S.ShowOneForm;
+      $('rescan').textContent = S.Rescan;
+      $('all').textContent = S.SelectAll;
+      $('clear').textContent = S.Clear;
+      $('convert').textContent = S.ConvertButton;
+      $('resultsLabel').textContent = S.ResultsLabel;
+      $('books').textContent = fmt(S.BooksButton, '?', '?');
+      $('oneForm').addEventListener('change', draw);
+      $('rescan').addEventListener('click', scan);
+      $('books').addEventListener('click', chooseAndRescan);
+      $('all').addEventListener('click', () => {
+        if (state) state.mixed.forEach((r) => ticks.set(r.family, true));
+        draw();
+      });
+      $('clear').addEventListener('click', () => {
+        ticks.clear();
+        draw();
+      });
+      $('convert').addEventListener('click', convert);
+      scan();
+    </script>
+  </body>
+</html>

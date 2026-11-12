@@ -1,0 +1,41 @@
+{
+  "en": {
+    "FolderChosen": "Folder: {0}",
+    "FolderNoSettings": "This folder has no Settings.xml, so it is not a Paratext project folder: {0}",
+    "FolderWrongProject": "This is the folder of project {0}, not of the project open here ({1}). Choose the folder {2}.",
+    "FolderNotAllowed": "Paratext 10 did not allow the folder to be read: {0}",
+    "FolderReadOnly": "The folder can be read but not written to here, so Save will download the file instead.",
+    "FolderNone": "No folder chosen yet.",
+    "FolderChooseRoot": "Choose the Paratext 9 Projects folder...",
+    "FolderOpenProject": "Open the project folder ({0})",
+    "FolderChooseOther": "Choose another folder...",
+    "FolderRootWhere": "Only once: choose the folder where Paratext 10 keeps its projects, {0}. After that each window finds its project's folder by itself.",
+    "FolderNotInRoot": "The folder {0} has no folder for the project {1}."
+  },
+  "es": {
+    "FolderChosen": "Carpeta: {0}",
+    "FolderNoSettings": "Esta carpeta no tiene Settings.xml, así que no es la carpeta de un proyecto de Paratext: {0}",
+    "FolderWrongProject": "Esta es la carpeta del proyecto {0}, no del proyecto abierto aquí ({1}). Elija la carpeta {2}.",
+    "FolderNotAllowed": "Paratext 10 no permitió leer la carpeta: {0}",
+    "FolderReadOnly": "La carpeta se puede leer pero aquí no se puede escribir en ella, así que Guardar descargará el archivo.",
+    "FolderNone": "Todavía no se ha elegido una carpeta.",
+    "FolderChooseRoot": "Elegir la carpeta Paratext 9 Projects...",
+    "FolderOpenProject": "Abrir la carpeta del proyecto ({0})",
+    "FolderChooseOther": "Elegir otra carpeta...",
+    "FolderRootWhere": "Solo una vez: elija la carpeta donde Paratext 10 guarda sus proyectos, {0}. Después cada ventana encuentra sola la carpeta de su proyecto.",
+    "FolderNotInRoot": "La carpeta {0} no tiene una carpeta para el proyecto {1}."
+  },
+  "fr": {
+    "FolderChosen": "Dossier : {0}",
+    "FolderNoSettings": "Ce dossier n’a pas de Settings.xml ; ce n’est donc pas le dossier d’un projet Paratext : {0}",
+    "FolderWrongProject": "C’est le dossier du projet {0}, pas celui du projet ouvert ici ({1}). Choisissez le dossier {2}.",
+    "FolderNotAllowed": "Paratext 10 n’a pas permis de lire le dossier : {0}",
+    "FolderReadOnly": "Le dossier peut être lu, mais pas modifié ici ; Enregistrer téléchargera donc le fichier.",
+    "FolderNone": "Aucun dossier choisi pour l’instant.",
+    "FolderChooseRoot": "Choisir le dossier Paratext 9 Projects...",
+    "FolderOpenProject": "Ouvrir le dossier du projet ({0})",
+    "FolderChooseOther": "Choisir un autre dossier...",
+    "FolderRootWhere": "Une seule fois : choisissez le dossier où Paratext 10 garde ses projets, {0}. Ensuite chaque fenêtre trouve seule le dossier de son projet.",
+    "FolderNotInRoot": "Le dossier {0} n’a pas de dossier pour le projet {1}."
+  }
+}

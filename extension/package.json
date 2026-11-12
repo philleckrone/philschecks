@@ -1,0 +1,9 @@
+{
+  "name": "phils-checks",
+  "private": true,
+  "version": "0.7.2",
+  "description": "Phils Custom (cms) Checks for Paratext 10: report checks ported from the CMS checks",
+  "main": "src/main.js",
+  "author": "Phil Leckrone",
+  "license": "MIT"
+}

@@ -1,0 +1,323 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      /*COMMON_CSS*/
+      .tabs {
+        display: flex;
+        gap: 2px;
+        border-bottom: 1px solid var(--t-line);
+      }
+      .tabs button {
+        border-radius: 4px 4px 0 0;
+        border-bottom: none;
+      }
+      .tabs button.on {
+        background: var(--t-bg);
+        font-weight: 600;
+        border-color: var(--t-line);
+      }
+      td.odd {
+        background: var(--t-odd);
+      }
+      tr.usual td {
+        background: var(--t-usual);
+        font-style: italic;
+      }
+      td.missing {
+        color: var(--t-muted);
+      }
+      input.changeto {
+        width: 100%;
+        box-sizing: border-box;
+      }
+      #note {
+        max-width: 1100px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="row"><b id="title"></b><span class="muted" id="project"></span></div>
+    <div id="intro" class="muted"></div>
+    <div id="note" class="muted"></div>
+    <div class="row" id="folderRow"></div>
+    <div class="row">
+      <b id="summary"></b>
+      <span class="grow"></span>
+      <button id="books"></button>
+      <button id="rescan"></button>
+    </div>
+    <div id="warning" class="warn"></div>
+    <div class="tabs"><button id="tabIssues" class="on"></button><button id="tabAll"></button></div>
+    <div class="gridbox" id="gridbox">
+      <table class="grid" id="issues"></table>
+      <table class="grid" id="matrix" style="display: none"></table>
+    </div>
+    <div class="row">
+      <span id="counts" class="muted"></span>
+      <span class="grow"></span>
+      <button id="all"></button>
+      <button id="none"></button>
+      <button id="goto"></button>
+      <button class="primary" id="fix"></button>
+    </div>
+    <div class="muted" id="resultsLabel"></div>
+    <textarea class="results" id="results" readonly></textarea>
+    <script>
+      /*COMMON_JS*/
+    </script>
+    <script>
+      let state = null;
+      let books = [];
+      const ticked = new Set();
+      const typed = new Map(); // key -> "Change to" text
+      let selectedBook = null;
+
+      function canTick(r) {
+        return r.fixable && state.canEdit && newValue(r).trim().length > 0 && newValue(r).replace(/\s+/g, ' ').trim() !== r.now;
+      }
+
+      function newValue(r) {
+        return typed.has(r.key) ? typed.get(r.key) : r.changeTo;
+      }
+
+      function drawIssues() {
+        const table = $('issues');
+        table.innerHTML = '';
+        const head = document.createElement('tr');
+        [S.ColFix, S.ColBook, S.ColField, S.ColLine, S.ColNow, S.ColStyle, S.ColUsual, S.ColChangeTo, S.ColPermission].forEach((h) => {
+          const th = document.createElement('th');
+          th.textContent = h;
+          head.appendChild(th);
+        });
+        table.appendChild(head);
+        if (!state) return;
+        state.rows.forEach((r) => {
+          const tr = document.createElement('tr');
+          if (r.book === selectedBook) tr.className = 'sel';
+          const tick = document.createElement('input');
+          tick.type = 'checkbox';
+          tick.checked = ticked.has(r.key);
+          tick.disabled = !canTick(r);
+          tick.addEventListener('change', () => {
+            if (tick.checked) ticked.add(r.key);
+            else ticked.delete(r.key);
+            updateCounts();
+          });
+          let change;
+          if (r.fixable) {
+            change = document.createElement('input');
+            change.type = 'text';
+            change.className = 'changeto';
+            change.value = newValue(r);
+            change.placeholder = S.NoSuggestion;
+            change.addEventListener('input', () => {
+              typed.set(r.key, change.value);
+              tick.disabled = !canTick(r);
+              if (tick.disabled) {
+                tick.checked = false;
+                ticked.delete(r.key);
+              }
+              updateCounts();
+            });
+          } else {
+            change = document.createElement('span');
+            change.className = 'muted';
+            change.textContent = S.BookNamesFix;
+          }
+          [tick, r.book, r.field, r.line, r.now, r.style, r.usual, change, r.permission].forEach((c) => {
+            const td = document.createElement('td');
+            if (c instanceof Node) td.appendChild(c);
+            else td.textContent = c;
+            tr.appendChild(td);
+          });
+          tr.addEventListener('click', (ev) => {
+            if (ev.target.tagName === 'INPUT') return;
+            selectedBook = r.book;
+            drawIssues();
+          });
+          tr.addEventListener('dblclick', () => goTo(r.book));
+          table.appendChild(tr);
+        });
+      }
+
+      function drawMatrix() {
+        const table = $('matrix');
+        table.innerHTML = '';
+        if (!state) return;
+        const m = state.matrix;
+        const head = document.createElement('tr');
+        [S.ColBook].concat(m.fields).forEach((h) => {
+          const th = document.createElement('th');
+          th.textContent = h;
+          head.appendChild(th);
+        });
+        table.appendChild(head);
+        const ur = document.createElement('tr');
+        ur.className = 'usual';
+        const first = document.createElement('td');
+        first.textContent = S.UsualRow;
+        ur.appendChild(first);
+        m.usual.forEach((u) => {
+          const td = document.createElement('td');
+          td.textContent = u.text;
+          td.title = u.tip;
+          ur.appendChild(td);
+        });
+        table.appendChild(ur);
+        m.rows.forEach((r) => {
+          const tr = document.createElement('tr');
+          if (r.book === selectedBook) tr.className = 'sel';
+          const b = document.createElement('td');
+          b.innerHTML = '<b>' + esc(r.book) + '</b>';
+          tr.appendChild(b);
+          r.cells.forEach((c) => {
+            const td = document.createElement('td');
+            td.textContent = c.text;
+            if (c.tip) td.title = c.tip;
+            if (c.missing) td.className = 'missing';
+            else if (c.odd) td.className = 'odd';
+            tr.appendChild(td);
+          });
+          tr.addEventListener('click', () => {
+            selectedBook = r.book;
+            drawMatrix();
+          });
+          tr.addEventListener('dblclick', () => goTo(r.book));
+          table.appendChild(tr);
+        });
+      }
+
+      function updateCounts() {
+        if (!state) {
+          $('counts').textContent = '';
+          return;
+        }
+        const can = state.rows.filter(canTick).length;
+        $('counts').textContent = fmt(S.Counts, state.rows.length, can, ticked.size);
+        $('fix').textContent = fmt(S.FixButton, ticked.size);
+        $('fix').disabled = ticked.size === 0;
+        $('all').disabled = can === 0;
+        $('none').disabled = ticked.size === 0;
+      }
+
+      function draw() {
+        $('summary').textContent = state ? state.summary : '';
+        $('note').textContent = state && state.bookNames ? S.BookNamesFromFolder : S.BookNamesP10;
+        let warn = '';
+        if (state && state.numberedBooks < 2) warn = S.NoNumberedBooks;
+        else if (state && state.rows.length === 0) warn = S.NoProblems;
+        else if (state && !state.canEdit) warn = S.NoPermissionP10;
+        $('warning').textContent = warn;
+        drawIssues();
+        drawMatrix();
+        updateCounts();
+      }
+
+      function goTo(book) {
+        cmd('goTo', BOOT.projectId, book, 1, 0).catch((e) => ($('results').value = String(e)));
+      }
+
+      async function scan() {
+        try {
+          books = await cmd('books', BOOT.projectId);
+          $('books').textContent = booksLabel(books);
+          // With a chosen folder, its BookNames.xml is compared too.
+          const bookNamesXml = ProjectFolder.chosen() ? await ProjectFolder.readText('BookNames.xml') : null;
+          state = bookNamesXml
+            ? await withProgress($('gridbox'), S.Opening, 'scanWith', { bookNamesXml })
+            : await withProgress($('gridbox'), S.Opening, 'scan');
+          // Ticks and typed texts are kept for rows still there.
+          const keys = new Set(state.rows.map((r) => r.key));
+          Array.from(ticked).forEach((k) => {
+            if (!keys.has(k)) ticked.delete(k);
+          });
+          if (state.failed.length > 0) $('results').value = fmt(S.NotRead, state.failed.join('; '));
+        } catch (e) {
+          state = null;
+          $('results').value = fmt(S.Error, e && e.message ? e.message : e);
+        }
+        draw();
+      }
+
+      async function fix() {
+        const chosen = state ? state.rows.filter((r) => ticked.has(r.key) && canTick(r)) : [];
+        if (chosen.length === 0) {
+          await tell(S.NothingSelected);
+          return;
+        }
+        const bookCount = new Set(chosen.map((r) => r.book)).size;
+        if (!(await ask(fmt(S.ConfirmP10, chosen.length, bookCount)))) return;
+        let report;
+        try {
+          report = await withProgress($('gridbox'), S.Opening, 'apply', { rows: chosen.map((r) => ({ key: r.key, newValue: newValue(r) })) });
+        } catch (e) {
+          await tell(fmt(S.Error, e && e.message ? e.message : e));
+          return;
+        }
+        const lines = [];
+        report.fixed.forEach((f) => lines.push(fmt(S.ResFixed, f.book, f.count)));
+        lines.push(report.fixed.length > 0 ? fmt(S.ResTotal, report.total, report.booksChanged) : S.ResNothing);
+        if (report.noPermission.length > 0) lines.push(fmt(S.ResNoPermission, report.noPermission.join(', ')));
+        if (report.changed.length > 0) lines.push(fmt(S.ResChanged, report.changed.join(', ')));
+        report.failed.forEach((f) => lines.push(fmt(S.ResFailed, f)));
+        if (report.backups > 0) lines.push(fmt(S.ResBackupsP10, report.backups));
+        ticked.clear();
+        typed.clear();
+        await scan();
+        $('results').value = lines.join('\n');
+      }
+
+      function showTab(all) {
+        $('tabIssues').className = all ? '' : 'on';
+        $('tabAll').className = all ? 'on' : '';
+        $('issues').style.display = all ? 'none' : '';
+        $('matrix').style.display = all ? '' : 'none';
+        $('intro').textContent = all ? S.AllHint : S.Intro;
+      }
+
+      $('title').textContent = S.Title + ' ' + (BOOT.version || '');
+      $('project').textContent = BOOT.projectName ? fmt(S.ProjectLabel, BOOT.projectName) : '';
+      $('note').textContent = S.BookNamesP10;
+      $('tabIssues').textContent = S.TabIssues;
+      $('tabAll').textContent = S.TabAll;
+      $('rescan').textContent = S.Rescan;
+      $('all').textContent = S.SelectAll;
+      $('none').textContent = S.ClearAll;
+      $('goto').textContent = S.GoToButton;
+      $('resultsLabel').textContent = S.ResultsLabel;
+      $('books').textContent = fmt(S.BooksButton, '?', '?');
+      $('fix').textContent = fmt(S.FixButton, 0);
+      showTab(false);
+      const folderOpened = folderBar($('folderRow'), 'read', scan);
+      $('tabIssues').addEventListener('click', () => showTab(false));
+      $('tabAll').addEventListener('click', () => showTab(true));
+      $('rescan').addEventListener('click', scan);
+      $('books').addEventListener('click', async () => {
+        const excluded = await chooseBooks(books);
+        if (excluded === null) return;
+        await cmd('saveBooks', BOOT.projectId, excluded);
+        await scan();
+      });
+      $('all').addEventListener('click', () => {
+        if (state) state.rows.filter(canTick).forEach((r) => ticked.add(r.key));
+        drawIssues();
+        updateCounts();
+      });
+      $('none').addEventListener('click', () => {
+        ticked.clear();
+        drawIssues();
+        updateCounts();
+      });
+      $('goto').addEventListener('click', () => {
+        if (selectedBook) goTo(selectedBook);
+      });
+      $('fix').addEventListener('click', fix);
+      // One scan at start: with the folder's BookNames.xml when it opens by itself.
+      folderOpened.then((opened) => {
+        if (!opened) scan();
+      });
+    </script>
+  </body>
+</html>

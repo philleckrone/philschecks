@@ -1,0 +1,171 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      /*COMMON_CSS*/
+      #reportHost {
+        display: block;
+        min-height: 100%;
+      }
+      textarea.paste {
+        width: 100%;
+        height: 260px;
+        box-sizing: border-box;
+        font: 12px Consolas, 'Cascadia Mono', monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="row">
+      <b id="title"></b><span class="muted" id="project"></span>
+      <span class="grow"></span>
+      <button id="choose"></button>
+      <input type="file" id="fileInput" multiple style="display: none" accept=".xml,.ldml,.sty,.vrs,.txt" />
+      <button id="paste"></button>
+      <button id="useP10"></button>
+      <button id="save"></button>
+      <button id="rescan"></button>
+    </div>
+    <div class="row" id="folderRow"></div>
+    <div class="row"><span id="source" class="muted"></span><span id="status" class="warn"></span></div>
+    <div class="gridbox" id="gridbox"><div id="reportHost"></div></div>
+    <script>
+      /*COMMON_JS*/
+    </script>
+    <script>
+      let lastHtml = '';
+      const host = $('reportHost');
+      const shadow = host.attachShadow({ mode: 'open' });
+
+      /**
+       * The report is a whole page: its CSS goes into the shadow root with :root as :host (so
+       * its colours are its own, not Paratext's theme) and body as a wrapper element.
+       */
+      function show(html) {
+        lastHtml = html;
+        const style = (html.split('<style>')[1] || '').split('</style>')[0];
+        const body = (html.split('<body>')[1] || '').split('</body>')[0];
+        const css = style.split(':root{').join(':host{').split('body{').join('.ps-body{');
+        shadow.innerHTML = '<style>' + css + ':host{display:block}</style><div class="ps-body">' + body + '</div>';
+      }
+
+      // In-page links (the Contents list) cannot move to an id inside a shadow root by themselves.
+      shadow.addEventListener('click', (ev) => {
+        const a = ev.target.closest ? ev.target.closest('a[href^="#"]') : null;
+        if (!a) return;
+        ev.preventDefault();
+        const target = shadow.getElementById(a.getAttribute('href').substring(1));
+        if (target) target.scrollIntoView({ block: 'start' });
+      });
+
+      function showResult(res) {
+        show(res.html);
+        $('source').textContent = res.source === 'files' ? fmt(S.SourceFiles, res.files.join(', ')) : S.SourceP10;
+        $('status').textContent = res.failed && res.failed.length > 0 ? ' ' + fmt(S.NotRead, res.failed.join('; ')) : '';
+        $('useP10').disabled = res.source !== 'files';
+      }
+
+      async function scan() {
+        try {
+          showResult(await withProgress($('gridbox'), S.Opening, 'scan'));
+        } catch (e) {
+          $('status').textContent = String(e && e.message ? e.message : e);
+        }
+      }
+
+      async function useFiles(files, meta) {
+        try {
+          showResult(await withProgress($('gridbox'), S.Writing, 'apply', { files, meta }));
+        } catch (e) {
+          await tell(String(e && e.message ? e.message : e));
+        }
+      }
+
+      function readAll(list) {
+        return Promise.all(
+          Array.from(list).map(
+            (f) =>
+              new Promise((resolve, reject) => {
+                const r = new FileReader();
+                r.onload = () => resolve({ name: f.name, text: r.result, length: f.size, mtime: f.lastModified });
+                r.onerror = () => reject(r.error);
+                r.readAsText(f);
+              }),
+          ),
+        );
+      }
+
+      $('fileInput').addEventListener('change', async () => {
+        const chosen = await readAll($('fileInput').files);
+        $('fileInput').value = '';
+        if (chosen.length === 0) return;
+        const files = {};
+        const meta = {};
+        chosen.forEach((f) => {
+          files[f.name] = f.text.replace(/^﻿/, '');
+          meta[f.name] = { length: f.length, mtime: f.mtime };
+        });
+        await useFiles(files, meta);
+      });
+
+      /** The project folder: Settings.xml, its .ldml files and the files the report looks for. */
+      async function fromFolder() {
+        const wanted = ['Settings.xml', 'custom.sty', 'custom.vrs', 'autocorrect.txt'].concat(
+          (await ProjectFolder.names()).filter((n) => /\.ldml$/i.test(n)),
+        );
+        const files = {};
+        const meta = { __folder: true };
+        for (const n of wanted) {
+          const text = await ProjectFolder.readText(n);
+          if (text === null) continue;
+          files[n] = text;
+          meta[n] = await ProjectFolder.info(n);
+        }
+        await useFiles(files, meta);
+      }
+
+      async function paste() {
+        const box = document.createElement('textarea');
+        box.className = 'paste';
+        const ok = await dialog(S.PasteIntro, [
+          { label: S.Ok, value: true, primary: true },
+          { label: S.Cancel, value: false },
+        ], box);
+        if (!ok || box.value.trim().length === 0) return;
+        await useFiles({ 'Settings.xml': box.value.replace(/^﻿/, '') }, {});
+      }
+
+      function save() {
+        if (!lastHtml) return;
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([lastHtml], { type: 'text/html' }));
+        a.download = 'SettingsReport.html';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          URL.revokeObjectURL(a.href);
+          a.remove();
+        }, 1000);
+      }
+
+      $('title').textContent = S.Title + ' ' + (BOOT.version || '');
+      $('project').textContent = BOOT.projectName ? ' - ' + BOOT.projectName : '';
+      $('choose').textContent = S.ChooseFiles;
+      $('paste').textContent = S.PasteButton;
+      $('useP10').textContent = S.UseP10;
+      $('save').textContent = S.SaveHtml;
+      $('rescan').textContent = S.Rescan;
+      $('useP10').disabled = true;
+      $('choose').addEventListener('click', () => $('fileInput').click());
+      $('paste').addEventListener('click', paste);
+      $('useP10').addEventListener('click', () => useFiles({}, {}));
+      $('save').addEventListener('click', save);
+      $('rescan').addEventListener('click', scan);
+      // One report at start: from the folder when it opens by itself, otherwise from Paratext 10.
+      folderBar($('folderRow'), 'read', fromFolder).then((opened) => {
+        if (!opened) scan();
+      });
+    </script>
+  </body>
+</html>

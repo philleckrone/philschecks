@@ -1,0 +1,724 @@
+<!-- Shared by the tool windows: tools/build.py puts the style part below where a window has
+     /*COMMON_CSS*/ and the script part where it has /*COMMON_JS*/. Colour variables are
+     prefixed (--t-*): Paratext 10 adds its own theme stylesheet with --accent, --muted... -->
+<style>
+  :root {
+    --t-bg: #ffffff;
+    --t-fg: #1f2328;
+    --t-muted: #59636e;
+    --t-line: #d0d7de;
+    --t-head: #f3f5f7;
+    --t-sel: #dbeafe;
+    --t-accent: #0b6bcb;
+    --t-warn: #8a1c00;
+    --t-odd: #ffe4b5;
+    --t-usual: #eef6ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --t-bg: #1e1f22;
+      --t-fg: #e6e6e6;
+      --t-muted: #a0a6ad;
+      --t-line: #3a3d42;
+      --t-head: #2a2c30;
+      --t-sel: #1e3a5f;
+      --t-accent: #6cb6ff;
+      --t-warn: #fdba74;
+      --t-odd: #5a4320;
+      --t-usual: #1d2b3a;
+    }
+  }
+  html,
+  body {
+    margin: 0;
+    height: 100%;
+    background: var(--t-bg);
+    color: var(--t-fg);
+    font: 13px/1.4 'Segoe UI', system-ui, sans-serif;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 12px;
+    box-sizing: border-box;
+  }
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+  .grow {
+    flex: 1;
+  }
+  .muted {
+    color: var(--t-muted);
+  }
+  .warn {
+    color: var(--t-warn);
+    font-weight: 600;
+  }
+  button {
+    font: inherit;
+    padding: 3px 12px;
+    border: 1px solid var(--t-line);
+    background: var(--t-head);
+    color: var(--t-fg);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  button.primary {
+    background: var(--t-accent);
+    border-color: var(--t-accent);
+    color: #fff;
+    font-weight: 600;
+  }
+  button:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  select,
+  input[type='text'] {
+    font: inherit;
+    background: var(--t-bg);
+    color: var(--t-fg);
+    border: 1px solid var(--t-line);
+    border-radius: 3px;
+    padding: 1px 4px;
+  }
+  .gridbox {
+    flex: 1;
+    min-height: 120px;
+    overflow: auto;
+    border: 1px solid var(--t-line);
+    border-radius: 4px;
+    position: relative;
+  }
+  table.grid {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  table.grid th {
+    position: sticky;
+    top: 0;
+    background: var(--t-head);
+    text-align: left;
+    font-weight: 600;
+    z-index: 1;
+  }
+  table.grid th,
+  table.grid td {
+    border-bottom: 1px solid var(--t-line);
+    padding: 3px 6px;
+    vertical-align: top;
+  }
+  table.grid tr.sel td {
+    background: var(--t-sel);
+  }
+  table.grid tr.oneform td {
+    background: var(--t-head);
+  }
+  textarea.results {
+    font: 12px/1.4 Consolas, 'Cascadia Mono', monospace;
+    background: var(--t-bg);
+    color: var(--t-fg);
+    border: 1px solid var(--t-line);
+    border-radius: 4px;
+    height: 90px;
+    resize: vertical;
+    white-space: pre-wrap;
+  }
+  /* the busy panel over a grid */
+  .busy {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: var(--t-bg);
+    z-index: 5;
+  }
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 4px solid var(--t-line);
+    border-top-color: var(--t-accent);
+    border-radius: 50%;
+    animation: tspin 0.8s linear infinite;
+  }
+  @keyframes tspin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  .track {
+    width: 60%;
+    max-width: 420px;
+    height: 8px;
+    background: var(--t-line);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .track > div {
+    height: 100%;
+    width: 0;
+    background: var(--t-accent);
+    transition: width 0.2s;
+  }
+  /* dialogs drawn in the page */
+  .modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+  }
+  .modal .box {
+    background: var(--t-bg);
+    color: var(--t-fg);
+    border: 1px solid var(--t-line);
+    border-radius: 6px;
+    padding: 14px 16px;
+    max-width: 640px;
+    width: 90%;
+    max-height: 85%;
+    overflow: auto;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  }
+  .modal .text {
+    white-space: pre-wrap;
+    margin-bottom: 12px;
+  }
+  .modal .buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 10px;
+  }
+  .bookgrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 2px 8px;
+    margin: 8px 0;
+  }
+</style>
+<script>
+  const BOOT = __BOOT__;
+  const papi = require('@papi/frontend');
+  const S = BOOT.strings;
+  const $ = (id) => document.getElementById(id);
+
+  function fmt(s, ...args) {
+    return String(s).replace(/\{(\d+)\}/g, (m, n) => (args[n] === undefined ? m : String(args[n])));
+  }
+
+  function esc(s) {
+    return String(s === null || s === undefined ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function cmd(name, ...args) {
+    return papi.commands.sendCommand(BOOT.id + '.' + name, ...args);
+  }
+
+  /** Shows the busy panel inside box (a .gridbox) with text and a bar (fraction, or null). */
+  function busy(box, text, fraction) {
+    let panel = box.querySelector('.busy');
+    if (!panel) {
+      panel = document.createElement('div');
+      panel.className = 'busy';
+      panel.innerHTML = '<div class="spinner"></div><div class="btext"></div><div class="track"><div></div></div>';
+      box.appendChild(panel);
+    }
+    panel.style.display = text === null ? 'none' : 'flex';
+    if (text === null) return;
+    panel.querySelector('.btext').textContent = text;
+    panel.querySelector('.track').style.visibility = fraction === null || fraction === undefined ? 'hidden' : 'visible';
+    panel.querySelector('.track > div').style.width = Math.round(Math.max(0, Math.min(1, fraction || 0)) * 100) + '%';
+  }
+
+  /** The text for a progress record from the backend. */
+  function progressText(p) {
+    if (!p) return null;
+    if (p.phase === 'open') return [S.Opening, 0];
+    if (p.phase === 'read') return [fmt(S.Reading, p.book, p.done + 1, p.total), p.total ? (p.done / p.total) * 0.9 : 0];
+    if (p.phase === 'check') return [S.Checking, 0.95];
+    if (p.phase === 'write') return [fmt(S.Writing, p.book, p.done + 1, p.total), p.total ? p.done / p.total : 0];
+    return null;
+  }
+
+  /**
+   * Runs a backend command (scan or apply) with the busy panel over box, asking for its progress
+   * every 250 ms. args come before the run id.
+   */
+  async function withProgress(box, firstText, name, ...args) {
+    const runId = String(Date.now()) + Math.random();
+    busy(box, firstText, 0);
+    // A poll still on its way when the run ends must not show the busy panel again.
+    let finished = false;
+    const poll = setInterval(() => {
+      cmd('progress', BOOT.projectId, runId)
+        .then((p) => {
+          const t = progressText(p);
+          if (t && !finished) busy(box, t[0], t[1]);
+        })
+        .catch(() => {});
+    }, 250);
+    try {
+      return await cmd(name, BOOT.projectId, ...args, runId);
+    } finally {
+      finished = true;
+      clearInterval(poll);
+      busy(box, null);
+    }
+  }
+
+  /** A dialog in the page: resolves with the value of the button pressed. */
+  function dialog(text, buttons, extra) {
+    return new Promise((resolve) => {
+      const modal = document.createElement('div');
+      modal.className = 'modal';
+      const box = document.createElement('div');
+      box.className = 'box';
+      const t = document.createElement('div');
+      t.className = 'text';
+      t.textContent = text;
+      box.appendChild(t);
+      if (extra) box.appendChild(extra);
+      const row = document.createElement('div');
+      row.className = 'buttons';
+      buttons.forEach((b) => {
+        const btn = document.createElement('button');
+        btn.textContent = b.label;
+        if (b.primary) btn.className = 'primary';
+        btn.addEventListener('click', () => {
+          if (b.check && !b.check()) return;
+          modal.remove();
+          resolve(b.value);
+        });
+        row.appendChild(btn);
+      });
+      box.appendChild(row);
+      modal.appendChild(box);
+      document.body.appendChild(modal);
+      const first = row.querySelector('button.primary') || row.querySelector('button');
+      if (first) first.focus();
+    });
+  }
+
+  function ask(text) {
+    return dialog(text, [
+      { label: S.Yes, value: true, primary: true },
+      { label: S.No, value: false },
+    ]);
+  }
+
+  function tell(text) {
+    return dialog(text, [{ label: S.Ok || 'OK', value: true, primary: true }]);
+  }
+
+  const OTHER_BOOKS = 'FRT BAK OTH INT CNC GLO TDX NDX XXA XXB XXC XXD XXE XXF XXG'.split(' ');
+
+  /** The books chooser (BookChooserForm): books = [{code, num, chosen}]; resolves with the excluded codes, or null. */
+  async function chooseBooks(books) {
+    const wrap = document.createElement('div');
+    const quick = document.createElement('div');
+    quick.className = 'row';
+    const grid = document.createElement('div');
+    grid.className = 'bookgrid';
+    const boxes = books.map((b) => {
+      const label = document.createElement('label');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = b.chosen;
+      label.append(cb, ' ' + b.code);
+      grid.appendChild(label);
+      return { b, cb };
+    });
+    const groups = [
+      [S.BooksAll, () => true],
+      [S.BooksNone, () => false],
+      [S.BooksBible, (b) => OTHER_BOOKS.indexOf(b.code) < 0],
+      [S.BooksOT, (b) => b.num >= 1 && b.num <= 39],
+      [S.BooksNT, (b) => b.num >= 40 && b.num <= 66],
+      [S.BooksDC, (b) => b.num >= 67 && b.num <= 92],
+      [S.BooksOther, (b) => OTHER_BOOKS.indexOf(b.code) >= 0],
+    ];
+    groups.forEach(([label, test]) => {
+      const btn = document.createElement('button');
+      btn.textContent = label;
+      btn.addEventListener('click', () => boxes.forEach((x) => (x.cb.checked = test(x.b))));
+      quick.appendChild(btn);
+    });
+    const note = document.createElement('div');
+    note.className = 'warn';
+    wrap.append(quick, grid, note);
+    const ok = await dialog(S.BooksIntro, [
+      {
+        label: S.Ok,
+        value: true,
+        primary: true,
+        check: () => {
+          const any = boxes.some((x) => x.cb.checked);
+          note.textContent = any ? '' : S.BooksNoneChosen;
+          return any;
+        },
+      },
+      { label: S.Cancel, value: false },
+    ], wrap);
+    if (!ok) return null;
+    return boxes.filter((x) => !x.cb.checked).map((x) => x.b.code);
+  }
+
+  function booksLabel(books) {
+    return fmt(S.BooksButton, books.filter((b) => b.chosen).length, books.length);
+  }
+
+  /**
+   * The project's folder. Paratext 10 keeps projects in %USERPROFILE%\.paratext-10-studio\projects\
+   * Paratext 9 Projects\<project>; the extension's backend may not read files, so the window does.
+   * The user picks the "Paratext 9 Projects" folder once (showDirectoryPicker): it is remembered in
+   * IndexedDB (key __projectsRoot, for every window and project), and each window then finds its
+   * project's subfolder itself (by name, else by Settings.xml <Guid>): with no click when the
+   * permission is still granted, else with one click. Picking a single project folder also works
+   * (remembered for that project). Without showDirectoryPicker, a webkitdirectory input (read only).
+   * The folder must be this project's: its Settings.xml <Guid> must be Paratext 10's project id.
+   * Tests replace IndexedDB with window.__pcFolderStore = {get(key), put(key, handle)}.
+   */
+  const ProjectFolder = (function () {
+    let handle = null; // FileSystemDirectoryHandle of the project
+    let files = null; // Map lower-case name -> File (from the input)
+    let writable = false;
+    let label = '';
+    const DB = 'philsChecksFolders';
+    const ROOT_KEY = '__projectsRoot';
+    const MAX_FOLDERS = 500;
+
+    function rootWhere() {
+      return '%USERPROFILE%\\.paratext-10-studio\\projects\\Paratext 9 Projects';
+    }
+    function where() {
+      return rootWhere() + '\\' + (BOOT.projectName || '?');
+    }
+
+    // ------------------------------------------------ remembering (IndexedDB, or the tests' store)
+    function db() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB, 1);
+        req.onupgradeneeded = () => req.result.createObjectStore('handles');
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+    function put(key, h) {
+      if (window.__pcFolderStore) return window.__pcFolderStore.put(key, h);
+      // Not waited for: remembering must never hold up using the folder.
+      db()
+        .then((d) => d.transaction('handles', 'readwrite').objectStore('handles').put(h, key))
+        .catch(() => {});
+    }
+    /** A remembered handle, or null; never waits more than a second (IndexedDB may not answer). */
+    function get(key) {
+      if (window.__pcFolderStore) return Promise.resolve(window.__pcFolderStore.get(key) || null);
+      const look = (async () => {
+        try {
+          const d = await db();
+          return await new Promise((resolve) => {
+            const req = d.transaction('handles').objectStore('handles').get(key);
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => resolve(null);
+          });
+        } catch (e) {
+          return null;
+        }
+      })();
+      return Promise.race([look, new Promise((r) => setTimeout(() => r(null), 1000))]);
+    }
+
+    // ------------------------------------------------ reading
+    function decode(buf) {
+      const b = new Uint8Array(buf);
+      if (b.length >= 2 && b[0] === 0xff && b[1] === 0xfe) return new TextDecoder('utf-16le').decode(b.subarray(2));
+      if (b.length >= 2 && b[0] === 0xfe && b[1] === 0xff) return new TextDecoder('utf-16be').decode(b.subarray(2));
+      if (b.length >= 3 && b[0] === 0xef && b[1] === 0xbb && b[2] === 0xbf) return new TextDecoder('utf-8').decode(b.subarray(3));
+      return new TextDecoder('utf-8').decode(b);
+    }
+
+    async function fileIn(dir, name) {
+      for await (const entry of dir.values()) if (entry.kind === 'file' && entry.name.toLowerCase() === name.toLowerCase()) return entry.getFile();
+      return null;
+    }
+
+    async function file(name) {
+      if (files) return files.get(name.toLowerCase()) || null;
+      return handle ? fileIn(handle, name) : null;
+    }
+
+    async function names() {
+      if (files) return Array.from(files.values()).map((f) => f.name);
+      const out = [];
+      if (handle) for await (const entry of handle.values()) if (entry.kind === 'file') out.push(entry.name);
+      return out;
+    }
+
+    function identity(xml, fallbackName) {
+      return {
+        guid: (/<Guid>\s*([^<\s]*)\s*<\/Guid>/.exec(xml) || [])[1] || '',
+        name: (/<Name>([^<]*)<\/Name>/.exec(xml) || [])[1] || fallbackName,
+      };
+    }
+
+    /** Whether a Settings.xml text is this project's (the Guid; the name when the id is not a Guid). */
+    function isThisProject(xml, fallbackName) {
+      const who = identity(xml, fallbackName);
+      const id = String(BOOT.projectId || '').toLowerCase();
+      if (who.guid && /^[0-9a-f]{20,}$/.test(id)) return who.guid.toLowerCase() === id;
+      return !!BOOT.projectName && who.name === BOOT.projectName;
+    }
+
+    /** Checks the chosen folder is this project's; throws a message for the user when it is not. */
+    async function verify() {
+      const f = await file('Settings.xml');
+      if (!f) throw new Error(fmt(S.FolderNoSettings, label));
+      const xml = decode(await f.arrayBuffer());
+      if (!isThisProject(xml, label)) throw new Error(fmt(S.FolderWrongProject, identity(xml, label).name, BOOT.projectName || BOOT.projectId, where()));
+    }
+
+    async function settingsOf(dir) {
+      try {
+        const f = await fileIn(dir, 'Settings.xml');
+        return f ? decode(await f.arrayBuffer()) : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    /**
+     * The project's folder inside a picked folder: the folder itself when it holds a Settings.xml;
+     * otherwise its subfolder named like the project, else the subfolder whose Settings.xml is this
+     * project's. A "projects" folder holding "Paratext 9 Projects" is looked into. null = not found.
+     */
+    async function findProject(dir) {
+      if (await settingsOf(dir)) return dir;
+      let base = dir;
+      try {
+        base = await dir.getDirectoryHandle('Paratext 9 Projects');
+      } catch (e) {
+        base = dir;
+      }
+      if (BOOT.projectName) {
+        try {
+          const d = await base.getDirectoryHandle(BOOT.projectName);
+          const xml = await settingsOf(d);
+          if (xml && isThisProject(xml, d.name)) return d;
+        } catch (e) {
+          // not by that name
+        }
+      }
+      let n = 0;
+      for await (const entry of base.values()) {
+        if (entry.kind !== 'directory') continue;
+        if (++n > MAX_FOLDERS) break;
+        const xml = await settingsOf(entry);
+        if (xml && isThisProject(xml, entry.name)) return entry;
+      }
+      return null;
+    }
+
+    function use(dir, mode) {
+      handle = dir;
+      files = null;
+      label = dir.name;
+      writable = mode === 'readwrite';
+    }
+
+    // ------------------------------------------------ choosing
+    /** Lets the user pick the projects folder (or a project folder). Resolves true when the project is found. */
+    async function choose(mode) {
+      if (window.showDirectoryPicker) {
+        let h = null;
+        let blocked = false;
+        const remembered = await get(ROOT_KEY);
+        const options = { id: 'philsChecksProjects', mode: mode || 'read', startIn: remembered || 'documents' };
+        try {
+          h = await window.showDirectoryPicker(options);
+        } catch (e) {
+          if (e && e.name === 'AbortError') return false;
+          try {
+            delete options.startIn; // an old or unusable remembered folder
+            h = await window.showDirectoryPicker(options);
+          } catch (e2) {
+            if (e2 && e2.name === 'AbortError') return false;
+            blocked = true; // not allowed here: the input below
+          }
+        }
+        if (!blocked && h) {
+          const project = await findProject(h);
+          if (!project) throw new Error(fmt(S.FolderNotInRoot, h.name, BOOT.projectName || BOOT.projectId));
+          use(project, mode);
+          await verify();
+          put(project === h ? BOOT.projectId : ROOT_KEY, h);
+          return true;
+        }
+      }
+      const list = await new Promise((resolve) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.webkitdirectory = true;
+        input.style.display = 'none';
+        input.addEventListener('change', () => resolve(input.files));
+        document.body.appendChild(input);
+        input.click();
+        setTimeout(() => input.remove(), 60000);
+      });
+      if (!list || list.length === 0) return false;
+      files = new Map();
+      handle = null;
+      writable = false;
+      Array.from(list).forEach((f) => {
+        const parts = (f.webkitRelativePath || f.name).split('/');
+        if (parts.length <= 2) {
+          files.set(f.name.toLowerCase(), f);
+          label = parts.length === 2 ? parts[0] : label;
+        }
+      });
+      await verify();
+      return true;
+    }
+
+    /** What is remembered: {handle, isRoot}, the projects folder first; or null. */
+    async function remembered() {
+      const root = await get(ROOT_KEY);
+      if (root) return { handle: root, isRoot: true };
+      const own = await get(BOOT.projectId);
+      return own ? { handle: own, isRoot: false } : null;
+    }
+
+    /**
+     * Opens the project's folder from what is remembered. ask = false: only when the permission is
+     * still granted (no prompt, no click needed); ask = true: asks for it (needs the user's click).
+     */
+    async function openRemembered(mode, ask) {
+      const r = await remembered();
+      if (!r) return false;
+      const opts = { mode: mode || 'read' };
+      let state = r.handle.queryPermission ? await r.handle.queryPermission(opts) : 'prompt';
+      if (state !== 'granted') {
+        if (!ask) return false;
+        state = await r.handle.requestPermission(opts);
+        if (state !== 'granted') return false;
+      }
+      const project = r.isRoot ? await findProject(r.handle) : r.handle;
+      if (!project) throw new Error(fmt(S.FolderNotInRoot, r.handle.name, BOOT.projectName || BOOT.projectId));
+      use(project, mode);
+      await verify();
+      return true;
+    }
+
+    return {
+      where,
+      rootWhere,
+      choose,
+      remembered,
+      openRemembered,
+      decode,
+      names,
+      chosen: () => !!(handle || files),
+      label: () => label,
+      canWrite: () => !!handle && writable,
+      async has(name) {
+        return !!(await file(name));
+      },
+      /** The file's text (BOM-aware), or null when it is not there. */
+      async readText(name) {
+        const f = await file(name);
+        return f ? decode(await f.arrayBuffer()) : null;
+      },
+      async readBytes(name) {
+        const f = await file(name);
+        return f ? new Uint8Array(await f.arrayBuffer()) : null;
+      },
+      /** {length, mtime} of a file, or null. */
+      async info(name) {
+        const f = await file(name);
+        return f ? { length: f.size, mtime: f.lastModified } : null;
+      },
+      async writeBytes(name, bytes) {
+        if (!handle || !writable) throw new Error(S.FolderReadOnly);
+        const fh = await handle.getFileHandle(name, { create: true });
+        const w = await fh.createWritable();
+        await w.write(bytes);
+        await w.close();
+      },
+    };
+  })();
+
+  /**
+   * The folder row of a window. First time: "Choose the Paratext 9 Projects folder..." with where
+   * it is. Afterwards the project's folder opens by itself when the permission is still granted,
+   * else "Open the project folder (PDT15)" does it in one click; "Choose another folder..." picks
+   * again. onChosen() runs once the project's folder is open.
+   */
+  async function folderBar(container, mode, onChosen) {
+    container.innerHTML = '';
+    const main = document.createElement('button');
+    main.className = 'primary';
+    const other = document.createElement('button');
+    other.textContent = S.FolderChooseOther;
+    other.style.display = 'none';
+    const status = document.createElement('span');
+    status.className = 'muted';
+    container.append(main, other, status);
+    let busyNow = false;
+    async function run(fn) {
+      if (busyNow) return;
+      busyNow = true;
+      try {
+        if (await fn()) {
+          status.textContent = fmt(S.FolderChosen, ProjectFolder.label()) + (mode === 'readwrite' && !ProjectFolder.canWrite() ? ' ' + S.FolderReadOnly : '');
+          status.className = 'muted';
+          main.textContent = fmt(S.FolderOpenProject, BOOT.projectName || ProjectFolder.label());
+          main.onclick = () => run(() => ProjectFolder.openRemembered(mode, true));
+          other.style.display = '';
+          await onChosen();
+        }
+      } catch (e) {
+        status.textContent = e && e.message ? e.message : String(e);
+        status.className = 'warn';
+      } finally {
+        busyNow = false;
+      }
+    }
+    other.addEventListener('click', () => run(() => ProjectFolder.choose(mode)));
+    const r = await ProjectFolder.remembered().catch(() => null);
+    if (r) {
+      main.textContent = fmt(S.FolderOpenProject, BOOT.projectName || r.handle.name);
+      main.onclick = () => run(() => ProjectFolder.openRemembered(mode, true));
+      other.style.display = '';
+      // No click needed while Paratext 10 still grants the permission. Resolves true when the
+      // folder opened by itself (onChosen then runs), so the window need not scan a second time;
+      // after 3 s without an answer it resolves false and the window goes on without the folder.
+      const opened = await Promise.race([
+        ProjectFolder.openRemembered(mode, false).catch(() => false),
+        new Promise((res) => setTimeout(() => res(false), 3000)),
+      ]);
+      if (opened && ProjectFolder.chosen()) {
+        run(async () => true);
+        return true;
+      }
+      return false;
+    }
+    main.textContent = S.FolderChooseRoot;
+    main.onclick = () => run(() => ProjectFolder.choose(mode));
+    status.textContent = fmt(S.FolderRootWhere, ProjectFolder.rootWhere());
+    return false;
+  }
+</script>

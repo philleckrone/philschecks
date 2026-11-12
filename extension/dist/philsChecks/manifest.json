@@ -1,0 +1,17 @@
+{
+  "name": "philsChecks",
+  "version": "0.7.2",
+  "publisher": "philLeckrone",
+  "displayData": "assets/displayData.json",
+  "author": "Phil Leckrone",
+  "license": "MIT",
+  "main": "src/main.js",
+  "extensionDependencies": {},
+  "elevatedPrivileges": [],
+  "menus": "contributions/menus.json",
+  "settings": "contributions/settings.json",
+  "projectSettings": "contributions/projectSettings.json",
+  "localizedStrings": "contributions/localizedStrings.json",
+  "themes": "contributions/themes.json",
+  "activationEvents": []
+}

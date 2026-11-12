@@ -1,0 +1,347 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      /*COMMON_CSS*/
+      #banner {
+        background: var(--t-usual);
+        border: 1px solid var(--t-line);
+        border-radius: 4px;
+        padding: 3px 8px;
+      }
+      table.grid td.out,
+      table.grid td.keys {
+        font-size: var(--ac-size, 16px);
+        font-family: var(--ac-font, inherit);
+      }
+      table.grid td.codes {
+        font: 12px Consolas, 'Cascadia Mono', monospace;
+        color: var(--t-muted);
+      }
+      table.grid tr {
+        cursor: pointer;
+      }
+      .addbar input[type='text'] {
+        font-size: 16px;
+        width: 180px;
+      }
+      #browser {
+        border: 1px solid var(--t-line);
+        border-radius: 4px;
+        padding: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        max-height: 40%;
+      }
+      #chars {
+        overflow: auto;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 3px;
+        min-height: 60px;
+      }
+      #chars button.ch {
+        min-width: 34px;
+        height: 34px;
+        padding: 0 4px;
+        font-size: 18px;
+        font-family: var(--ac-font, inherit);
+      }
+      .grouptitle {
+        width: 100%;
+        font-weight: 600;
+        margin-top: 4px;
+      }
+      .dirty {
+        color: var(--t-warn);
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="row"><b id="title"></b><span class="muted" id="project"></span><span class="grow"></span><span id="count" class="muted"></span><span id="dirty" class="dirty"></span><button class="primary" id="save"></button></div>
+    <div class="row" id="folderRow"></div>
+    <div id="banner" class="muted"></div>
+    <div class="row">
+      <label id="fontLabel"></label><input type="text" id="font" style="width: 160px" />
+      <label id="sizeLabel"></label>
+      <select id="size"></select>
+      <span id="message" class="muted"></span>
+    </div>
+    <div class="gridbox" id="gridbox"><table class="grid" id="grid"></table></div>
+    <div class="row addbar">
+      <label for="pattern" id="patternLabel"></label><input type="text" id="pattern" />
+      <label for="output" id="outputLabel"></label><input type="text" id="output" />
+      <button class="primary" id="add"></button>
+      <button id="clear"></button>
+      <button id="delete"></button>
+      <span class="grow"></span>
+      <button id="toggle"></button>
+    </div>
+    <div id="browser">
+      <div class="row">
+        <b id="browserTitle"></b>
+        <label id="blockLabel"></label><select id="block"></select>
+        <label id="searchLabel"></label><input type="text" id="search" style="width: 140px" />
+        <span id="charCount" class="muted"></span>
+      </div>
+      <div id="chars"></div>
+    </div>
+    <script>
+      /*COMMON_JS*/
+    </script>
+    <script>
+      /*TOOL_CORE*/
+    </script>
+    <script>
+      let header = [];
+      let entries = []; // {pattern, replacement}
+      let selected = -1;
+      let dirty = false;
+      let lastBox = null;
+      const MAX_SEARCH = 200;
+
+      function setDirty(d) {
+        dirty = d;
+        $('dirty').textContent = d ? S.Status_Unsaved : '';
+      }
+
+      function drawGrid() {
+        const t = $('grid');
+        t.innerHTML = '';
+        const head = document.createElement('tr');
+        [S.Column_TypeKeys, S.Column_OutputCharacter, S.Column_UnicodeValues].forEach((h) => {
+          const th = document.createElement('th');
+          th.textContent = h;
+          head.appendChild(th);
+        });
+        t.appendChild(head);
+        entries.forEach((e, i) => {
+          const tr = document.createElement('tr');
+          if (i === selected) tr.className = 'sel';
+          [
+            [e.pattern, 'keys'],
+            [e.replacement, 'out'],
+            [ACCore.unicodeValues(e.replacement), 'codes'],
+          ].forEach(([text, cls]) => {
+            const td = document.createElement('td');
+            td.textContent = text;
+            td.className = cls;
+            tr.appendChild(td);
+          });
+          tr.addEventListener('click', () => select(i === selected ? -1 : i));
+          t.appendChild(tr);
+        });
+        $('count').textContent = fmt(S.Status_EntriesFormat, entries.length);
+      }
+
+      function select(i) {
+        selected = i;
+        if (i >= 0) {
+          $('pattern').value = entries[i].pattern;
+          $('output').value = entries[i].replacement;
+          $('add').textContent = S.Btn_Update;
+        } else $('add').textContent = S.Btn_Add;
+        $('delete').disabled = i < 0;
+        drawGrid();
+      }
+
+      /** CommitNewEntry: Add, or Update the selected entry. */
+      function commit() {
+        if (!$('pattern').value) return $('pattern').focus();
+        if (!$('output').value) return $('output').focus();
+        if (selected >= 0) entries[selected] = ACCore.entry($('pattern').value, $('output').value);
+        else entries.push(ACCore.entry($('pattern').value, $('output').value));
+        const added = selected < 0 ? entries.length - 1 : selected;
+        setDirty(true);
+        $('pattern').value = '';
+        $('output').value = '';
+        select(-1);
+        const rows = $('grid').querySelectorAll('tr');
+        if (rows[added + 1]) rows[added + 1].scrollIntoView({ block: 'nearest' });
+        $('pattern').focus();
+      }
+
+      function clearBoxes() {
+        $('pattern').value = '';
+        $('output').value = '';
+        select(-1);
+        $('pattern').focus();
+      }
+
+      function remove() {
+        if (selected < 0) return;
+        entries.splice(selected, 1);
+        setDirty(true);
+        $('pattern').value = '';
+        $('output').value = '';
+        select(-1);
+      }
+
+      async function load() {
+        if (dirty && !(await ask(S.NotSavedLeave))) return;
+        const bytes = await ProjectFolder.readBytes('autocorrect.txt');
+        if (bytes) {
+          const r = ACCore.read(bytes);
+          header = r.headerLines;
+          entries = r.entries;
+          $('message').textContent = '';
+        } else {
+          header = [];
+          entries = [];
+          $('message').textContent = S.NoFile;
+        }
+        setDirty(false);
+        select(-1);
+        $('save').disabled = false;
+      }
+
+      async function save() {
+        const bytes = ACCore.write(header, entries);
+        try {
+          if (ProjectFolder.canWrite()) {
+            await ProjectFolder.writeBytes('autocorrect.txt', bytes);
+            $('message').textContent = fmt(S.SavedTo, entries.length, ProjectFolder.label());
+          } else {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([bytes], { type: 'text/plain' }));
+            a.download = 'autocorrect.txt';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+              URL.revokeObjectURL(a.href);
+              a.remove();
+            }, 1000);
+            $('message').textContent = fmt(S.Downloaded, entries.length, ProjectFolder.where());
+          }
+          setDirty(false);
+        } catch (e) {
+          await tell(S.Dlg_SaveErrorBody + '\n' + (e && e.message ? e.message : e));
+        }
+      }
+
+      // ------------------------------------------------------------ the character browser
+
+      function charButton(item) {
+        const b = document.createElement('button');
+        b.className = 'ch';
+        b.textContent = item.display;
+        b.title = item.tip;
+        b.addEventListener('click', () => {
+          const target = lastBox === $('pattern') ? $('pattern') : $('output');
+          target.value += item.ch;
+          target.focus();
+        });
+        return b;
+      }
+
+      function showBlock() {
+        const box = $('chars');
+        box.innerHTML = '';
+        const block = ACCore.blocks()[parseInt($('block').value, 10) || 0];
+        const items = ACCore.blockItems(block);
+        items.forEach((it) => box.appendChild(charButton(it)));
+        $('charCount').textContent = fmt(S.Browser_CharsFormat, items.length);
+      }
+
+      function showSearch(text) {
+        if (!text.trim()) return showBlock();
+        const box = $('chars');
+        box.innerHTML = '';
+        const found = ACCore.search(text, MAX_SEARCH);
+        const truncated = found.length > MAX_SEARCH;
+        if (truncated) found.length = MAX_SEARCH;
+        ACCore.blocks().forEach((block, bi) => {
+          const items = found.filter((f) => f.block === block);
+          if (items.length === 0) return;
+          const title = document.createElement('div');
+          title.className = 'grouptitle';
+          title.textContent = block.name + ' ';
+          const browse = document.createElement('button');
+          browse.textContent = S.Browser_BrowseBlock;
+          browse.addEventListener('click', () => {
+            $('search').value = '';
+            $('block').value = String(bi);
+            showBlock();
+          });
+          title.appendChild(browse);
+          box.appendChild(title);
+          items.forEach((it) => box.appendChild(charButton(it)));
+        });
+        $('charCount').textContent = fmt(S.Browser_CharsFormat, found.length) + (truncated ? '+' : '');
+      }
+
+      // ------------------------------------------------------------ setup
+
+      $('title').textContent = S.Title;
+      $('project').textContent = BOOT.projectName ? ' - ' + BOOT.projectName : '';
+      $('banner').textContent = S.Banner_RestartReminder;
+      $('save').textContent = S.Save;
+      $('fontLabel').textContent = S.Toolbar_Font;
+      $('sizeLabel').textContent = S.Toolbar_Size;
+      $('patternLabel').textContent = S.AddBar_TypeSequence;
+      $('outputLabel').textContent = S.AddBar_OutputChar;
+      $('output').title = S.AddBar_OutputTooltip;
+      $('add').textContent = S.Btn_Add;
+      $('clear').textContent = S.Btn_Clear;
+      $('delete').textContent = S.Delete;
+      $('browserTitle').textContent = S.Browser_Title;
+      $('blockLabel').textContent = S.Browser_Block;
+      $('searchLabel').textContent = S.Browser_Search;
+      $('search').title = S.Browser_SearchTooltip;
+      $('toggle').textContent = S.Browser_Hide;
+      [10, 12, 14, 16, 18, 20, 24, 28, 32].forEach((n) => {
+        const o = document.createElement('option');
+        o.value = String(n);
+        o.textContent = String(n);
+        $('size').appendChild(o);
+      });
+      $('size').value = '16';
+      ACCore.blocks().forEach((b, i) => {
+        const o = document.createElement('option');
+        o.value = String(i);
+        o.textContent = b.name;
+        $('block').appendChild(o);
+      });
+      $('font').addEventListener('input', () => document.documentElement.style.setProperty('--ac-font', $('font').value ? "'" + $('font').value + "'" : 'inherit'));
+      $('size').addEventListener('change', () => document.documentElement.style.setProperty('--ac-size', $('size').value + 'px'));
+      $('pattern').addEventListener('focus', () => (lastBox = $('pattern')));
+      $('output').addEventListener('focus', () => (lastBox = $('output')));
+      ['pattern', 'output'].forEach((id) =>
+        $(id).addEventListener('keydown', (ev) => {
+          if (ev.key === 'Enter') commit();
+        }),
+      );
+      document.addEventListener('keydown', (ev) => {
+        if (ev.target.tagName === 'INPUT' || ev.target.tagName === 'SELECT') return;
+        if (ev.key === 'Delete') remove();
+        else if (ev.key === 'Insert') $('pattern').focus();
+      });
+      $('add').addEventListener('click', commit);
+      $('clear').addEventListener('click', clearBoxes);
+      $('delete').addEventListener('click', remove);
+      $('save').addEventListener('click', save);
+      $('block').addEventListener('change', () => {
+        $('search').value = '';
+        showBlock();
+      });
+      let searchTimer = null;
+      $('search').addEventListener('input', () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => showSearch($('search').value), 300);
+      });
+      $('toggle').addEventListener('click', () => {
+        const hidden = $('browser').style.display === 'none';
+        $('browser').style.display = hidden ? '' : 'none';
+        $('toggle').textContent = hidden ? S.Browser_Hide : S.Browser_Show;
+      });
+      $('save').disabled = true;
+      $('delete').disabled = true;
+      folderBar($('folderRow'), 'readwrite', load);
+      drawGrid();
+      showBlock();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,580 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      :root {
+        --pc-bg: #ffffff;
+        --pc-fg: #1f2328;
+        --pc-muted: #59636e;
+        --pc-line: #d0d7de;
+        --pc-head: #f3f5f7;
+        --pc-sel: #dbeafe;
+        --pc-accent: #0b6bcb;
+        --pc-warn: #9a3412;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --pc-bg: #1e1f22;
+          --pc-fg: #e6e6e6;
+          --pc-muted: #a0a6ad;
+          --pc-line: #3a3d42;
+          --pc-head: #2a2c30;
+          --pc-sel: #1e3a5f;
+          --pc-accent: #6cb6ff;
+          --pc-warn: #fdba74;
+        }
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--pc-bg);
+        color: var(--pc-fg);
+        font: 13px/1.4 'Segoe UI', system-ui, sans-serif;
+      }
+      body {
+        display: flex;
+        gap: 10px;
+        padding: 8px 12px;
+        box-sizing: border-box;
+      }
+      #left {
+        width: 260px;
+        flex: none;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      #right {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      #list {
+        flex: 1;
+        overflow: auto;
+        border: 1px solid var(--pc-line);
+        border-radius: 4px;
+      }
+      .item {
+        padding: 5px 8px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--pc-line);
+      }
+      .item.sel {
+        background: var(--pc-sel);
+      }
+      .item .kind {
+        color: var(--pc-muted);
+        font-size: 11px;
+      }
+      h1 {
+        font-size: 15px;
+        margin: 0;
+      }
+      #desc {
+        color: var(--pc-muted);
+      }
+      #opts {
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        gap: 4px 10px;
+        align-items: center;
+      }
+      #opts label {
+        font-weight: 600;
+      }
+      select,
+      input[type='text'],
+      input[type='number'] {
+        font: inherit;
+        background: var(--pc-bg);
+        color: var(--pc-fg);
+        border: 1px solid var(--pc-line);
+        border-radius: 3px;
+        padding: 2px 4px;
+      }
+      input[type='text'] {
+        width: 100%;
+        box-sizing: border-box;
+      }
+      button {
+        font: inherit;
+        padding: 3px 12px;
+        border: 1px solid var(--pc-line);
+        background: var(--pc-head);
+        color: var(--pc-fg);
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button.primary {
+        background: var(--pc-accent);
+        border-color: var(--pc-accent);
+        color: #fff;
+        font-weight: 600;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .spinner {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border: 2px solid var(--pc-line);
+        border-top-color: var(--pc-accent);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        vertical-align: -2px;
+        margin-right: 6px;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      #busy {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 40px 20px;
+        color: #333;
+        font-size: 14px;
+      }
+      #busy .spinner {
+        width: 32px;
+        height: 32px;
+        border-width: 4px;
+        margin: 0;
+      }
+      #busy .track {
+        width: 60%;
+        max-width: 420px;
+        height: 8px;
+        background: #e5e7eb;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      #busy .track > div {
+        height: 100%;
+        width: 0;
+        background: #0b6bcb;
+        transition: width 0.2s;
+      }
+      #bar {
+        height: 4px;
+        background: var(--pc-head);
+        border-radius: 2px;
+        overflow: hidden;
+        display: none;
+      }
+      #bar > div {
+        height: 100%;
+        width: 0;
+        background: var(--pc-accent);
+        transition: width 0.2s;
+      }
+      #status {
+        color: var(--pc-muted);
+      }
+      #status.err {
+        color: var(--pc-warn);
+        font-weight: 600;
+      }
+      #out {
+        flex: 1;
+        overflow: auto;
+        border: 1px solid var(--pc-line);
+        border-radius: 4px;
+        background: #fff;
+      }
+      .pc-report {
+        padding: 8px 12px;
+      }
+      .muted {
+        color: var(--pc-muted);
+        font-size: 11px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="left">
+      <div id="checksLabel" style="font-weight: 600"></div>
+      <div id="list"><div class="item" id="loading"><span class="spinner"></span><span>Loading...</span></div></div>
+      <div class="muted" id="version"></div>
+    </div>
+    <div id="right">
+      <h1 id="name"></h1>
+      <div id="desc"></div>
+      <div id="opts"></div>
+      <div class="row">
+        <button class="primary" id="run"></button>
+        <button class="primary" id="open" style="display: none"></button>
+        <button id="defaults"></button>
+        <label><input type="checkbox" id="otherBooks" /> <span id="otherBooksLabel"></span></label>
+        <span id="status"></span>
+      </div>
+      <div id="bar"><div></div></div>
+      <div id="out">
+        <div id="busy"><span class="spinner"></span><div id="busyText"></div><div class="track"><div id="busyBar"></div></div></div>
+        <div id="report"></div>
+      </div>
+    </div>
+    <script>
+      const BOOT = __PCX_BOOT__;
+      const papi = require('@papi/frontend');
+
+      const STR = {
+        en: {
+          checks: 'Checks',
+          loading: 'Loading the list of checks...',
+          opening: 'Opening the project...',
+          reading: 'Reading {0} ({1} of {2})...',
+          checking: 'Running {0}...',
+          building: 'Preparing the report...',
+          showing: 'Showing the report...',
+          open: 'Open {0}...',
+          opensWindow: '{0} opens in its own window, where it scans the project.',
+          otherBooks: 'Include non-Bible books (FRT, BAK, OTH, XXA...)',
+          report: 'Report',
+          run: 'Run',
+          defaults: 'Restore defaults',
+          yes: 'Yes',
+          no: 'No',
+          running: 'Running {0}...',
+          done: '{0} result(s) in {1} book(s).',
+          failed: 'The check failed: {0}',
+          notRead: 'Not read: {0}',
+          noOptions: 'This check has no options.',
+          notWhole: '{0} must be a whole number.',
+        },
+        es: {
+          checks: 'Verificaciones',
+          loading: 'Cargando la lista de verificaciones...',
+          opening: 'Abriendo el proyecto...',
+          reading: 'Leyendo {0} ({1} de {2})...',
+          checking: 'Ejecutando {0}...',
+          building: 'Preparando el informe...',
+          showing: 'Mostrando el informe...',
+          open: 'Abrir {0}...',
+          opensWindow: '{0} se abre en su propia ventana, donde examina el proyecto.',
+          otherBooks: 'Incluir los libros que no son de la Biblia (FRT, BAK, OTH, XXA...)',
+          report: 'Informe',
+          run: 'Ejecutar',
+          defaults: 'Restaurar valores predeterminados',
+          yes: 'Sí',
+          no: 'No',
+          running: 'Ejecutando {0}...',
+          done: '{0} resultado(s) en {1} libro(s).',
+          failed: 'La verificación falló: {0}',
+          notRead: 'No se leyó: {0}',
+          noOptions: 'Esta verificación no tiene opciones.',
+          notWhole: '{0} debe ser un número entero.',
+        },
+        fr: {
+          checks: 'Vérifications',
+          loading: 'Chargement de la liste des vérifications...',
+          opening: 'Ouverture du projet...',
+          reading: 'Lecture de {0} ({1} sur {2})...',
+          checking: 'Exécution de {0}...',
+          building: 'Préparation du rapport...',
+          showing: 'Affichage du rapport...',
+          open: 'Ouvrir {0}...',
+          opensWindow: '{0} s’ouvre dans sa propre fenêtre, où il examine le projet.',
+          otherBooks: 'Inclure les livres hors Bible (FRT, BAK, OTH, XXA...)',
+          report: 'Rapport',
+          run: 'Lancer',
+          defaults: 'Rétablir les valeurs par défaut',
+          yes: 'Oui',
+          no: 'Non',
+          running: 'Exécution de {0}...',
+          done: '{0} résultat(s) dans {1} livre(s).',
+          failed: 'La vérification a échoué : {0}',
+          notRead: 'Non lu : {0}',
+          noOptions: 'Cette vérification n’a pas d’options.',
+          notWhole: '{0} doit être un nombre entier.',
+        },
+      };
+      const S = STR[BOOT.lang] || STR.en;
+      const KIND = {
+        en: { report: 'Report', changes: 'Changes text' },
+        es: { report: 'Informe', changes: 'Cambia el texto' },
+        fr: { report: 'Rapport', changes: 'Modifie le texte' },
+      }[BOOT.lang] || { report: 'Report', changes: 'Changes text' };
+
+      let checks = [];
+      let current = null;
+      let busy = false;
+      const $ = (id) => document.getElementById(id);
+
+      function fmt(s, ...args) {
+        return s.replace(/\{(\d+)\}/g, (m, n) => (args[n] === undefined ? m : String(args[n])));
+      }
+
+      /** The status line; working = with the spinner. */
+      function status(text, isError, working) {
+        const el = $('status');
+        el.textContent = '';
+        if (working) {
+          const sp = document.createElement('span');
+          sp.className = 'spinner';
+          el.appendChild(sp);
+        }
+        el.appendChild(document.createTextNode(text || ''));
+        el.className = isError ? 'err' : '';
+        $('busy').style.display = working ? 'flex' : 'none';
+        $('report').style.display = working ? 'none' : '';
+        if (working) $('busyText').textContent = text || '';
+      }
+
+      /** The progress bar: fraction 0..1, or null to hide it. */
+      function bar(fraction) {
+        $('bar').style.display = fraction === null ? 'none' : 'block';
+        const w = Math.round(Math.max(0, Math.min(1, fraction || 0)) * 100) + '%';
+        $('bar').firstElementChild.style.width = w;
+        $('busyBar').style.width = w;
+        $('busyBar').parentElement.style.visibility = fraction === null ? 'hidden' : 'visible';
+      }
+
+      function showProgress(p) {
+        if (!p || p.runId !== runId || !busy) return;
+        if (p.phase === 'open') status(S.opening, false, true);
+        else if (p.phase === 'read') status(fmt(S.reading, p.book, p.done + 1, p.total), false, true);
+        else if (p.phase === 'check') status(fmt(S.checking, current ? current.name : ''), false, true);
+        else if (p.phase === 'report') status(S.building, false, true);
+        if (p.total > 0) bar(p.phase === 'read' ? (p.done / p.total) * 0.9 : p.phase === 'open' ? 0 : 0.95);
+      }
+
+      // Progress sent by the backend while a check runs (book by book).
+      let runId = null;
+      try {
+        const onProgress = papi.network.getNetworkEvent('philsChecks.onProgress');
+        onProgress(showProgress);
+      } catch (e) {
+        // no progress events: the spinner alone shows that it is working
+      }
+
+      function drawList() {
+        const list = $('list');
+        list.textContent = '';
+        checks.forEach((c) => {
+          const div = document.createElement('div');
+          div.className = 'item' + (current && current.id === c.id ? ' sel' : '');
+          const name = document.createElement('div');
+          name.textContent = c.name;
+          const kind = document.createElement('div');
+          kind.className = 'kind';
+          kind.textContent = KIND[c.kind] || c.kind;
+          div.append(name, kind);
+          div.addEventListener('click', () => select(c.id));
+          div.addEventListener('dblclick', () => run());
+          list.appendChild(div);
+        });
+      }
+
+      function drawOptions(values) {
+        const box = $('opts');
+        box.textContent = '';
+        if (current.options.length === 0) {
+          const p = document.createElement('div');
+          p.className = 'muted';
+          p.textContent = S.noOptions;
+          box.appendChild(p);
+          return;
+        }
+        current.options.forEach((o) => {
+          const label = document.createElement('label');
+          label.textContent = o.label;
+          label.title = o.tip;
+          label.htmlFor = 'opt_' + o.name;
+          let input;
+          if (o.type === 'bool') {
+            input = document.createElement('select');
+            [
+              ['Yes', S.yes],
+              ['No', S.no],
+            ].forEach(([v, t]) => {
+              const op = document.createElement('option');
+              op.value = v;
+              op.textContent = t;
+              input.appendChild(op);
+            });
+            input.value = String(values[o.name]).trim().toLowerCase() === 'yes' ? 'Yes' : 'No';
+          } else {
+            input = document.createElement('input');
+            input.type = o.type === 'int' ? 'number' : 'text';
+            input.value = values[o.name];
+          }
+          input.id = 'opt_' + o.name;
+          input.title = o.tip;
+          box.append(label, input);
+        });
+      }
+
+      function readOptions() {
+        const o = {};
+        for (const d of current.options) {
+          const v = $('opt_' + d.name).value;
+          if (d.type === 'int' && !/^\s*[+-]?\d+\s*$/.test(v)) throw new Error(fmt(S.notWhole, d.label));
+          o[d.name] = v;
+        }
+        return o;
+      }
+
+      async function select(id) {
+        current = checks.find((c) => c.id === id);
+        drawList();
+        $('name').textContent = current.name;
+        $('desc').textContent = current.description;
+        $('report').textContent = '';
+        status('');
+        bar(null);
+        const opens = !!current.opens;
+        $('run').style.display = opens ? 'none' : '';
+        $('defaults').style.display = opens ? 'none' : '';
+        $('otherBooks').parentElement.style.display = opens ? 'none' : '';
+        $('open').style.display = opens ? '' : 'none';
+        if (opens) {
+          $('open').textContent = fmt(S.open, current.name);
+          $('opts').textContent = '';
+          const p = document.createElement('div');
+          p.className = 'muted';
+          p.textContent = fmt(S.opensWindow, current.name);
+          $('opts').appendChild(p);
+          return;
+        }
+        let values = {};
+        try {
+          values = await papi.commands.sendCommand('philsChecks.loadOptions', BOOT.projectId, id);
+        } catch (e) {
+          current.options.forEach((o) => (values[o.name] = o.def));
+        }
+        drawOptions(values);
+      }
+
+      function showReport(res) {
+        const out = $('report');
+        out.textContent = '';
+        const style = document.createElement('style');
+        style.textContent = res.css;
+        const div = document.createElement('div');
+        div.className = 'pc-report';
+        // The report is built by the extension from escaped project text.
+        div.innerHTML = res.html;
+        out.append(style, div);
+      }
+
+      async function run() {
+        if (!current || busy) return;
+        if (current.opens) {
+          openOther();
+          return;
+        }
+        let options;
+        try {
+          options = readOptions();
+        } catch (e) {
+          status(e.message, true);
+          return;
+        }
+        busy = true;
+        $('run').disabled = true;
+        $('list').style.pointerEvents = 'none';
+        runId = String(Date.now()) + Math.random();
+        status(fmt(S.running, current.name), false, true);
+        bar(0);
+        $('report').textContent = '';
+        const myRun = runId;
+        const poll = setInterval(() => {
+          papi.commands
+            .sendCommand('philsChecks.progress', BOOT.projectId, myRun)
+            .then(showProgress)
+            .catch(() => {});
+        }, 250);
+        try {
+          const res = await papi.commands.sendCommand('philsChecks.run', BOOT.projectId, current.id, options, BOOT.lang, {
+            otherBooks: $('otherBooks').checked,
+            runId,
+          });
+          status(S.showing, false, true);
+          bar(1);
+          // Let the window paint the status before a big report is laid out.
+          await new Promise((r) => setTimeout(r, 30));
+          showReport(res);
+          let text = fmt(S.done, res.count, res.booksRead.length);
+          if (res.failed.length > 0) text += ' ' + fmt(S.notRead, res.failed.join('; '));
+          status(text, res.failed.length > 0);
+        } catch (e) {
+          status(fmt(S.failed, e && e.message ? e.message : e), true);
+        } finally {
+          clearInterval(poll);
+          busy = false;
+          runId = null;
+          bar(null);
+          $('run').disabled = false;
+          $('list').style.pointerEvents = '';
+        }
+      }
+
+      $('out').addEventListener('click', (ev) => {
+        const a = ev.target.closest ? ev.target.closest('a.pc-go') : null;
+        if (!a) return;
+        ev.preventDefault();
+        papi.commands.sendCommand('philsChecks.goTo', BOOT.projectId, a.getAttribute('data-ref')).catch((e) => status(String(e), true));
+      });
+
+      function openOther() {
+        papi.commands.sendCommand(current.opens, undefined, BOOT.projectId).catch((e) => status(String(e), true));
+      }
+
+      $('run').addEventListener('click', run);
+      $('open').addEventListener('click', openOther);
+      $('defaults').addEventListener('click', () => {
+        if (!current) return;
+        const values = {};
+        current.options.forEach((o) => (values[o.name] = o.def));
+        drawOptions(values);
+      });
+
+      async function start() {
+        $('checksLabel').textContent = S.checks;
+        $('run').textContent = S.run;
+        $('defaults').textContent = S.defaults;
+        $('otherBooksLabel').textContent = S.otherBooks;
+        $('otherBooks').checked = !!BOOT.otherBooks;
+        $('version').textContent = (BOOT.projectName ? BOOT.projectName + ' · ' : '') + BOOT.version;
+        $('loading').lastChild.textContent = S.loading;
+        status(S.loading, false, true);
+        bar(null);
+        if (!BOOT.projectName)
+          papi.commands
+            .sendCommand('philsChecks.projectName', BOOT.projectId)
+            .then((n) => {
+              if (n) $('version').textContent = n + ' \u00b7 ' + BOOT.version;
+            })
+            .catch(() => {});
+        try {
+          checks = await papi.commands.sendCommand('philsChecks.list', BOOT.lang);
+        } catch (e) {
+          status(String(e), true);
+          return;
+        }
+        status('');
+        drawList();
+        if (checks.length > 0) select(checks[0].id);
+      }
+      start();
+    </script>
+  </body>
+</html>
