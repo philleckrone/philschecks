@@ -11,7 +11,7 @@ namespace PhilsChecks
     public sealed class Strings
     {
         /// <summary>The tool's version: shown in the window title and reported to Paratext.</summary>
-        public const string ToolVersion = "1.5";
+        public const string ToolVersion = "1.6";
 
         public Lang Language;
         public string MenuText;
@@ -21,6 +21,7 @@ namespace PhilsChecks
         public string ChecksLanguage;
         public string English;
         public string Spanish;
+        public string French_;
         public string ColCheck;
         public string ColKind;
         public string KindReport;
@@ -84,6 +85,7 @@ namespace PhilsChecks
             s.ChecksLanguage = "Language of the checks:";
             s.English = "English";
             s.Spanish = "Spanish";
+            s.French_ = "French";
             s.ColCheck = "Check";
             s.ColKind = "Kind";
             s.KindReport = "Report";
@@ -115,6 +117,7 @@ namespace PhilsChecks
             s.ChecksLanguage = "Idioma de las verificaciones:";
             s.English = "Ingl\u00E9s";
             s.Spanish = "Espa\u00F1ol";
+            s.French_ = "Franc\u00E9s";
             s.ColCheck = "Verificaci\u00F3n";
             s.ColKind = "Tipo";
             s.KindReport = "Informe";
@@ -146,6 +149,7 @@ namespace PhilsChecks
             s.ChecksLanguage = "Langue des v\u00E9rifications :";
             s.English = "Anglais";
             s.Spanish = "Espagnol";
+            s.French_ = "Fran\u00E7ais";
             s.ColCheck = "V\u00E9rification";
             s.ColKind = "Type";
             s.KindReport = "Rapport";

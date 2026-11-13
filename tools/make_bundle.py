@@ -8,10 +8,10 @@ uses), so the plugin and the installer offer the same checks. The zip holds:
 
   index.txt     one line per check and language: id, lang, .cms file, help file ('' = none)
   manifest.txt  one line per file: lang/name, SHA-256
-  en/..., es/...  the files of each language, flat, as in a cms folder, plus the shared
+  en/, es/, fr/  the files of each language, flat, as in a cms folder, plus the shared
                   files their checks need (ptx_goto.py + ParatextGoTo.exe)
 
-A check without a Spanish version is run from en/. Entries get a fixed date, so the zip
+A check without a Spanish or French version is run from en/. Entries get a fixed date, so the zip
 (and with it the plugin dll) only changes when a file changes. Run this before building the
 plugin whenever a check changes.
 """
@@ -27,7 +27,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 CATALOG = os.path.join(REPO, "tools", "phils_installer", "catalog.json")
 OUT = os.path.join(os.path.dirname(HERE), "PhilsChecksPlugin", "Resources", "checks.zip")
-LANGS = ("en", "es")
+LANGS = ("en", "es", "fr")
 
 # project_checker only starts <projects>\cms\ProjectChecker.exe, so it cannot run from the
 # plugin's own folder.

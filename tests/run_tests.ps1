@@ -22,23 +22,31 @@ try {
   # -- lists -------------------------------------------------------------------------------
   $en = @(& $exe list en)
   $es = @(& $exe list es)
+  $fr = @(& $exe list fr)
   Check ($en.Count -eq 19) "19 checks in English ($($en.Count))"
   Check ($es.Count -eq 19) "19 checks in Spanish ($($es.Count))"
-  Check (@($en | ? { $_ -match "`tes`t" }).Count -eq 0) 'the English list uses only en files'
-  foreach ($pair in @(@($en, 'en-US', 'English'), @($es, 'es-ES', 'Spanish'))) {
+  Check ($fr.Count -eq 19) "19 checks in French ($($fr.Count))"
+  Check (@($en | ? { $_ -match "`t(es|fr)`t" }).Count -eq 0) 'the English list uses only en files'
+  # 1.6: every check exists in Spanish and French, so nothing is English only any more.
+  Check (@($es | ? { $_ -notmatch "^\S+`tes`t" }).Count -eq 0) 'every Spanish check runs from es/'
+  Check (@($fr | ? { $_ -notmatch "^\S+`tfr`t" }).Count -eq 0) 'every French check runs from fr/'
+  foreach ($pair in @(@($en, 'en-US', 'English'), @($es, 'es-ES', 'Spanish'), @($fr, 'fr-FR', 'French'))) {
     $names = @($pair[0] | % { ($_ -split "`t")[6] })
     $sorted = [string[]]$names.Clone()
     [Array]::Sort($sorted, [StringComparer]::Create((New-Object Globalization.CultureInfo $pair[1]), $true))
     Check (($sorted -join '|') -eq ($names -join '|')) "the $($pair[2]) list is in alphabetical order (first: $($names[0]))"
   }
   $allReports = $es | ? { $_ -like 'all_reports*' }
-  Check ($allReports -match "`ten`t" -and $allReports -match 'english-only') 'All Reports (no Spanish) is listed in English, marked'
+  Check ($allReports -match "`tes`t" -and $allReports -notmatch 'english-only') 'All Reports is listed in Spanish'
   Check (($es | ? { $_ -like 'marker_space*' }) -match 'MarkerSpace_sp.cms') 'Marker Space uses its Spanish .cms'
-  # 1.4: a Spanish check without help of its own gets the English check's .rtf.
+  Check (($fr | ? { $_ -like 'marker_space*' }) -match 'MarkerSpace_fr.cms') 'Marker Space uses its French .cms'
+  # Every check with English help has its own Spanish and French help (1.6).
   $esHelp = @{}; foreach ($l in $es) { $f = $l -split "`t"; $esHelp[$f[0]] = $f[3] }
-  Check ($esHelp['quotation_examiner'] -eq 'en/quotation_examiner.rtf' -and $esHelp['short_v_1'] -eq 'en/Short_V_1.rtf') "Spanish checks without help fall back to the English .rtf ($($esHelp['quotation_examiner']))"
-  Check ($esHelp['marker_space'] -eq 'es/MarkerSpace_sp.rtf') "a Spanish check with its own help keeps it ($($esHelp['marker_space']))"
-  Check ($esHelp['project_BT_reference_tool'] -eq 'es/') "a check with no help in either language has none"
+  $frHelp = @{}; foreach ($l in $fr) { $f = $l -split "`t"; $frHelp[$f[0]] = $f[3] }
+  Check ($esHelp['quotation_examiner'] -eq 'es/quotation_examiner_sp.rtf' -and $esHelp['short_v_1'] -eq 'es/Short_V_1_sp.rtf') "Spanish checks have Spanish help ($($esHelp['quotation_examiner']))"
+  Check (@($fr | ? { ($_ -split "`t")[3] -like 'en/*' }).Count -eq 0) 'no French check falls back to English help'
+  Check ($frHelp['marker_space'] -eq 'fr/MarkerSpace_fr.rtf') "French help ($($frHelp['marker_space']))"
+  Check ($esHelp['project_BT_reference_tool'] -eq 'es/' -and $frHelp['project_BT_reference_tool'] -eq 'fr/') "a check with no help in any language has none"
   Check (($en | ? { $_ -like 'quotation_matcher*' }) -match "`tchanges`t") 'quotation_matcher is marked as changing text'
   Check ((@($en | ? { $_ -match "`tchanges`t" } | % { ($_ -split "`t")[0] } | Sort-Object) -join ',') -eq 'compare_copy_figures,quotation_matcher') 'only quotation_matcher and compare_copy_figures change text'
 
@@ -61,14 +69,18 @@ try {
   Check (@(Get-ChildItem $dir -File).Count -eq $count) "the folder holds the same $count files"
   $esDir = @(& $exe prepare es)[0]
   Check ((Test-Path (Join-Path $esDir 'MarkerSpace_sp.cms')) -and -not (Test-Path (Join-Path $esDir 'MarkerSpace.cms'))) 'es folder holds the Spanish files only'
+  $frDir = @(& $exe prepare fr)[0]
+  Check ((Test-Path (Join-Path $frDir 'MarkerSpace_fr.cms')) -and (Test-Path (Join-Path $frDir 'ptx_goto.py')) -and
+         -not (Test-Path (Join-Path $frDir 'MarkerSpace.cms'))) 'fr folder holds the French files (and ptx_goto) only'
 
   # -- Paratext's members ------------------------------------------------------------------
   $env:PC_INIT = Join-Path $work 'projects'
   Push-Location $ParatextDir
   try { $reflect = @(& $exe reflect $ParatextDir) } finally { Pop-Location }
   Remove-Item Env:PC_INIT
-  $reflect | ? { $_ -notmatch '^ok   (en|es) ' } | % { Write-Host "     $_" }
-  Check ($reflect[-1] -eq 'PASS') "reflect: 36 .cms through Paratext's CreateItem, handler swap, search paths"
+  $reflect | ? { $_ -notmatch '^ok   (en|es|fr) ' } | % { Write-Host "     $_" }
+  $nCms = @($reflect | ? { $_ -match '^ok   (en|es|fr) ' }).Count
+  Check ($reflect[-1] -eq 'PASS') "reflect: $nCms .cms through Paratext's CreateItem, handler swap, search paths"
 
   # -- the window --------------------------------------------------------------------------
   Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
@@ -106,10 +118,9 @@ public static class PcWin {
       [PcWin]::PostMessage([IntPtr]$run.Current.NativeWindowHandle, $BM_CLICK, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null
       for ($i = 0; $i -lt 25 -and -not (Test-Path $env:PC_RUNLOG); $i++) { Start-Sleep -Milliseconds 200 }
       $log = if (Test-Path $env:PC_RUNLOG) { Get-Content $env:PC_RUNLOG } else { '' }
-      $wantLang = if ($lang -eq 'es') { 'es' } else { 'en' }
+      $wantLang = $lang
       # The list is sorted by name: the first row is the first line of the test host's list.
       $firstRow = @(& $exe list $wantLang)[0] -split "`t"
-      # A check without Spanish (All Reports) runs from en/ even in the Spanish list.
       Check ($log -like "RUN $($firstRow[0]) $($firstRow[1]) $($firstRow[2]) *") "$lang Run runs the first check ($($firstRow[0])) from its $($firstRow[1]) folder: $log"
 
       # 1.5: Help shows the .rtf in the plugin's own viewer (no WordPad on Windows 11 24H2+).

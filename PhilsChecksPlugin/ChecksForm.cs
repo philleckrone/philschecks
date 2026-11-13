@@ -70,6 +70,7 @@ namespace PhilsChecks
             languageBox.DropDownStyle = ComboBoxStyle.DropDownList;
             languageBox.Items.Add(strings.English);
             languageBox.Items.Add(strings.Spanish);
+            languageBox.Items.Add(strings.French_);
             languageBox.Width = 160;
             count.AutoSize = true;
             count.Margin = new Padding(20, 7, 3, 0);
@@ -122,20 +123,21 @@ namespace PhilsChecks
             list.SelectedIndexChanged += delegate { ShowSelected(); };
             languageBox.SelectedIndexChanged += delegate
             {
-                string lang = languageBox.SelectedIndex == 1 ? "es" : "en";
+                string lang = CheckLanguage;
                 if (!loading) Settings.SaveLanguage(lang);   // only the user's own choice is kept
                 Fill(lang);
             };
 
-            string start = Settings.LoadLanguage() ?? (strings.Language == Lang.Spanish ? "es" : "en");
-            languageBox.SelectedIndex = start == "es" ? 1 : 0;   // fills the list
+            string start = Settings.LoadLanguage()
+                ?? (strings.Language == Lang.Spanish ? "es" : strings.Language == Lang.French ? "fr" : "en");
+            languageBox.SelectedIndex = Math.Max(0, Array.IndexOf(CheckBundle.Languages, start));   // fills the list
             loading = false;
         }
 
-        /// <summary>The language of the checks shown ("en" or "es").</summary>
+        /// <summary>The language of the checks shown ("en", "es" or "fr"; in the order of CheckBundle.Languages).</summary>
         public string CheckLanguage
         {
-            get { return languageBox.SelectedIndex == 1 ? "es" : "en"; }
+            get { return CheckBundle.Languages[Math.Max(0, languageBox.SelectedIndex)]; }
         }
 
         private void Fill(string lang)

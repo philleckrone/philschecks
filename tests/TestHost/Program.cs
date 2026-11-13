@@ -10,8 +10,8 @@ namespace PhilsChecksTests
 {
     /// <summary>
     /// Test host for the Phils Custom (cms) Checks plugin (never deployed). Modes:
-    ///   list en|es                 the checks of the bundle in that language
-    ///   prepare en|es              writes that language's folder (PC_ROOT) and prints it
+    ///   list en|es|fr              the checks of the bundle in that language
+    ///   prepare en|es|fr           writes that language's folder (PC_ROOT) and prints it
     ///   reflect [PARATEXT_DIR]     loads Paratext.exe (outside Paratext) and checks every member the
     ///                              plugin uses: each bundled .cms through CMSManager.CreateItem, the
     ///                              OK-button swap on PythonChecksForm, the runner's search paths
@@ -44,7 +44,7 @@ namespace PhilsChecksTests
 
         private static int Usage()
         {
-            Console.Error.WriteLine("PhilsChecksTestHost list|prepare en|es, reflect [PARATEXT_DIR], form [--lang L] [--project NAME]");
+            Console.Error.WriteLine("PhilsChecksTestHost list|prepare en|es|fr, reflect [PARATEXT_DIR], form [--lang L] [--project NAME]");
             return 1;
         }
 

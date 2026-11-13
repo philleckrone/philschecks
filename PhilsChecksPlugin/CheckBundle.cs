@@ -14,12 +14,12 @@ namespace PhilsChecks
     public sealed class CheckInfo
     {
         public string Id;
-        /// <summary>The folder it runs from: "en" or "es".</summary>
+        /// <summary>The folder it runs from: "en", "es" or "fr".</summary>
         public string Lang;
         public string CmsFile;
         /// <summary>The help .rtf, "" when there is none.</summary>
         public string HelpFile;
-        /// <summary>The folder ("en" or "es") holding <see cref="HelpFile"/>: "en" when a Spanish check
+        /// <summary>The folder ("en", "es" or "fr") holding <see cref="HelpFile"/>: "en" when a Spanish or French check
         /// has no help of its own and the English check's is used (1.4, the user's choice for now).</summary>
         public string HelpLang;
         /// <summary>The help file's full path, set before a run (null = not prepared).</summary>
@@ -28,7 +28,7 @@ namespace PhilsChecks
         public string Description;
         /// <summary>The .cms has \outputProject: the check writes text into a project.</summary>
         public bool ChangesText;
-        /// <summary>Spanish was asked for, but the check exists only in English.</summary>
+        /// <summary>Spanish or French was asked for, but the check exists only in English.</summary>
         public bool EnglishOnly;
     }
 
@@ -41,7 +41,7 @@ namespace PhilsChecks
     /// <summary>
     /// The checks the plugin carries (Resources\checks.zip, made by tools\make_bundle.py), and
     /// their copy on disk. Python imports scripts from a folder, so the files are written to
-    /// %LOCALAPPDATA%\PhilsChecks\checks\en and \es (only this user can write there). Before every
+    /// %LOCALAPPDATA%\PhilsChecks\checks\en, \es and \fr (only this user can write there). Before every
     /// run <see cref="Prepare"/> compares each file with the SHA-256 in the bundle's manifest,
     /// writes again any that differ, and removes anything else in those folders, so only the
     /// files that came with the plugin can run.
@@ -49,7 +49,7 @@ namespace PhilsChecks
     public sealed class CheckBundle
     {
         public const string ResourceName = "PhilsChecks.checks.zip";
-        public static readonly string[] Languages = { "en", "es" };
+        public static readonly string[] Languages = { "en", "es", "fr" };
 
         private readonly Dictionary<string, byte[]> files = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, string> hashes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -117,7 +117,7 @@ namespace PhilsChecks
         }
 
         /// <summary>
-        /// The checks in <paramref name="lang"/> ("en" or "es"), in alphabetical order of their
+        /// The checks in <paramref name="lang"/> ("en", "es" or "fr"), in alphabetical order of their
         /// names (the user's request, 1.3; compared as in that language, ignoring case). A check
         /// with no Spanish version is listed in English, marked EnglishOnly.
         /// </summary>
@@ -149,7 +149,7 @@ namespace PhilsChecks
                 result.Add(c);
             }
             StringComparer cmp = StringComparer.Create(
-                new System.Globalization.CultureInfo(lang == "es" ? "es-ES" : "en-US"), true);
+                new System.Globalization.CultureInfo(lang == "es" ? "es-ES" : lang == "fr" ? "fr-FR" : "en-US"), true);
             return result.OrderBy(c => c.Name, cmp).ThenBy(c => c.Id, StringComparer.Ordinal).ToList();
         }
 
