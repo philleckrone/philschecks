@@ -7,9 +7,8 @@
 # Checks: choosing the projects folder once (or the projects folder one level up, or the project
 # folder itself); a remembered projects folder opening with no click (permission granted) or one
 # click (permission to ask); finding the project by Guid; a projects folder without the project;
-# another project's folder refused; AutoCorrect load/add/Save (the bytes = ACCore.write); the
-# webkitdirectory fallback (read only, Save downloads); NBT sends BookNames.xml; Project Settings
-# sends the folder's files.
+# another project's folder refused; one report at start (no second scan); the webkitdirectory
+# fallback; NBT sends BookNames.xml; Project Settings sends the folder's files.
 #     python tests/folder_ui_test.py [PROJECTDIR]
 # Each page writes PASS/FAIL lines into <pre id="result">, read back with --dump-dom. Waits use
 # __until(cond), which yields real I/O turns (--virtual-time-budget fast-forwards timers only).
@@ -147,71 +146,65 @@ def main():
     common = json.load(open(os.path.join(EXT, 'src', 'tools', 'common-strings.json'), encoding='utf-8'))['en']
     choose_root = button(common['FolderChooseRoot']) + '.click();'
     open_project = button(common['FolderOpenProject'].replace('{0}', 'PDT15'))
-    loaded = "await __until(()=>document.querySelectorAll('#grid tr').length>1);"
     folder_text = "document.getElementById('folderRow').textContent"
-    ac_count = "ACCore.read(new Uint8Array(" + json.dumps(files.get('autocorrect.txt', [])) + ")).entries.length"
-    rows_ok = "document.querySelectorAll('#grid tr').length===" + ac_count + "+1"
+    # Project Settings sends the folder's files with apply; without a folder it scans Paratext 10's settings.
+    applied = "await __until(()=>window.__calls.some(c=>/apply$/.test(c.name)));"
+    apply_call = "window.__calls.find(c=>/apply$/.test(c.name))"
+    sent_ok = ("(()=>{const c=" + apply_call + ";const f=c?Object.keys(c.args[1].files):[];"
+               "return f.indexOf('Settings.xml')>=0&&f.some(n=>/\\.ldml$/i.test(n))&&c.args[1].meta.__folder===true;})()")
+    no_apply = "!window.__calls.some(c=>/apply$/.test(c.name))"
+    scanned = "window.__calls.some(c=>/projectSettings\\.scan$/.test(c.name))"
+    ps_state = {'html': '<html><head><style></style></head><body>report</body></html>', 'source': 'files', 'files': [], 'failed': []}
     tmp = tempfile.mkdtemp(prefix='folder_ui_')
     results = []
 
-    # 1. First time: choose the projects folder; the project's subfolder is found; edit and save.
-    steps = ("__ok(!!" + button(common['FolderChooseRoot']) + ",'first time: the button is \"Choose the Paratext 9 Projects folder...\"');"
-             "__ok(" + folder_text + ".indexOf('Paratext 9 Projects')>=0,'first time: it says where that folder is');" +
-             choose_root + loaded +
-             "__ok(" + rows_ok + ",'the PDT15 subfolder was found and autocorrect.txt loaded');"
-             "__ok(window.__pickerMode==='readwrite','the folder is asked for read/write');"
-             "__ok(!!window.__store['__projectsRoot'],'the projects folder is remembered');"
-             "const orig=ACCore.read(new Uint8Array(" + json.dumps(files.get('autocorrect.txt', [])) + "));"
-             "document.getElementById('pattern').value='zz_';document.getElementById('output').value='a\\u0331';document.getElementById('add').click();"
-             "document.getElementById('save').click();await __until(()=>window.__written!==null);"
-             "const want=ACCore.write(orig.headerLines,orig.entries.concat([ACCore.entry('zz_','a\\u0331')]));"
-             "const got=window.__written?new Uint8Array(window.__written):null;"
-             "__ok(!!got&&got.length===want.length&&got.every((b,i)=>b===want[i]),'Save wrote exactly what ACCore writes ('+want.length+' bytes)');")
-    results += run_page(page('autocorrect', 'autoCorrect', steps, tree, ['Paratext 9 Projects'], project_id=pid), tmp, 'first-time')
+    def ps(label, steps, t, pick, **kw):
+        return run_page(page('project-settings', 'projectSettings', steps, t, pick, state=ps_state, project_id=pid, **kw), tmp, label)
 
-    # 2. Remembered, permission still granted: opens with no click, in each tool.
-    steps = (loaded + "__ok(" + rows_ok + ",'no click: the project folder opened by itself');"
-             "__ok(window.__pickerCalls===0&&window.__asked===0,'no chooser and no permission prompt');")
-    results += run_page(page('autocorrect', 'autoCorrect', steps, tree, [], remember=['Paratext 9 Projects'], project_id=pid), tmp, 'no-click-ac')
+    # 1. First time: choose the projects folder; the project's subfolder is found and read.
+    steps = ("__ok(!!" + button(common['FolderChooseRoot']) + ",'first time: the button is \"Choose the Paratext 9 Projects folder...\"');"
+             "__ok(" + folder_text + ".indexOf('Paratext 9 Projects')>=0,'first time: it says where that folder is');"
+             "await __until(()=>" + scanned + ");__ok(" + scanned + ",'first time: the report starts from Paratext 10\\'s settings');" +
+             choose_root + applied +
+             "__ok(" + sent_ok + ",'the PDT15 subfolder was found and its files sent: '+Object.keys(" + apply_call + ".args[1].files).join(', '));"
+             "__ok(window.__pickerMode==='read','the folder is asked for reading only');"
+             "__ok(!!window.__store['__projectsRoot'],'the projects folder is remembered');")
+    results += ps('first-time', steps, tree, ['Paratext 9 Projects'])
+
+    # 2. Remembered, permission still granted: opens with no click (Project Settings, NBT), one report only.
+    steps = (applied + "__ok(" + sent_ok + ",'no click: Project Settings reads the folder by itself');"
+             "__ok(window.__pickerCalls===0&&window.__asked===0,'no chooser and no permission prompt');"
+             "__ok(!" + scanned + ",'only one report at start (no second scan)');")
+    results += ps('no-click-ps', steps, tree, [], remember=['Paratext 9 Projects'])
     nbt_state = {'rows': [], 'matrix': {'fields': [], 'usual': [], 'rows': []}, 'summary': '', 'numberedBooks': 17, 'bookNames': True, 'canEdit': True, 'failed': [], 'books': []}
     steps = ("await __until(()=>window.__calls.some(c=>/scanWith$/.test(c.name)));"
              "const c=window.__calls.find(c=>/scanWith$/.test(c.name));"
-             "__ok(!!c&&/<book /.test(c.args[1].bookNamesXml||''),'no click: Numbered Book Titles reads BookNames.xml by itself');")
+             "__ok(!!c&&/<book /.test(c.args[1].bookNamesXml||''),'no click: Numbered Book Titles reads BookNames.xml by itself');"
+             "__ok(!window.__calls.some(c=>/numberedBookTitles\\.scan$/.test(c.name)),'Numbered Book Titles: only one scan at start');")
     results += run_page(page('numbered-book-titles', 'numberedBookTitles', steps, tree, [], remember=['Paratext 9 Projects'], state=nbt_state, project_id=pid), tmp, 'no-click-nbt')
-    ps_state = {'html': '<html><head><style></style></head><body>report</body></html>', 'source': 'files', 'files': [], 'failed': []}
-    steps = ("await __until(()=>window.__calls.some(c=>/apply$/.test(c.name)));"
-             "const c=window.__calls.find(c=>/apply$/.test(c.name));const f=c?Object.keys(c.args[1].files):[];"
-             "__ok(f.indexOf('Settings.xml')>=0&&f.some(n=>/\\.ldml$/i.test(n))&&c.args[1].meta.__folder===true,'no click: Project Settings reads the folder by itself: '+f.join(', '));")
-    results += run_page(page('project-settings', 'projectSettings', steps, tree, [], remember=['Paratext 9 Projects'], state=ps_state, project_id=pid), tmp, 'no-click-ps')
 
     # 3. Remembered, permission to ask: one click.
-    steps = ("await __until(()=>!!" + open_project + ");"
-             "__ok(!!" + open_project + "&&document.querySelectorAll('#grid tr').length===1,'permission to ask: \"Open the project folder (PDT15)\", nothing opened yet');" +
-             open_project + ".click();" + loaded +
-             "__ok(" + rows_ok + "&&window.__asked===1&&window.__pickerCalls===0,'one click: permission asked once, no chooser, the project opened');")
-    results += run_page(page('autocorrect', 'autoCorrect', steps, tree, [], perm='prompt', remember=['Paratext 9 Projects'], project_id=pid), tmp, 'one-click')
+    steps = ("await __until(()=>!!" + open_project + "&&" + scanned + ");"
+             "__ok(!!" + open_project + "&&" + no_apply + ",'permission to ask: \"Open the project folder (PDT15)\", the report from Paratext 10 meanwhile');" +
+             open_project + ".click();" + applied +
+             "__ok(" + sent_ok + "&&window.__asked===1&&window.__pickerCalls===0,'one click: permission asked once, no chooser, the folder read');")
+    results += ps('one-click', steps, tree, [], perm='prompt', remember=['Paratext 9 Projects'])
 
-    # 4. Found by Guid under another folder name; 5. not there; 6. one level up; 7. the project itself.
-    steps = choose_root + loaded + "__ok(" + rows_ok + ",'found by its Guid in a folder with another name');"
-    results += run_page(page('autocorrect', 'autoCorrect', steps, renamed, ['Paratext 9 Projects'], project_id=pid), tmp, 'by-guid')
+    # 4. Found by Guid under another folder name; 5. not there; 6. one level up; 7. the project itself; 8. another project.
+    results += ps('by-guid', choose_root + applied + "__ok(" + sent_ok + ",'found by its Guid in a folder with another name');", renamed, ['Paratext 9 Projects'])
     steps = (choose_root + "await __until(()=>/no folder for the project/.test(" + folder_text + "));"
-             "__ok(/no folder for the project PDT15/.test(" + folder_text + "),'a projects folder without PDT15 is reported');")
-    results += run_page(page('autocorrect', 'autoCorrect', steps, without, ['Paratext 9 Projects'], project_id=pid), tmp, 'not-there')
-    steps = choose_root + loaded + "__ok(" + rows_ok + ",'the projects folder one level up also works');"
-    results += run_page(page('autocorrect', 'autoCorrect', steps, tree, [], project_id=pid), tmp, 'level-up')
-    steps = (choose_root + loaded + "__ok(" + rows_ok + ",'choosing the project folder itself also works');"
+             "__ok(/no folder for the project PDT15/.test(" + folder_text + ")&&" + no_apply + ",'a projects folder without PDT15 is reported');")
+    results += ps('not-there', steps, without, ['Paratext 9 Projects'])
+    results += ps('level-up', choose_root + applied + "__ok(" + sent_ok + ",'the projects folder one level up also works');", tree, [])
+    steps = (choose_root + applied + "__ok(" + sent_ok + ",'choosing the project folder itself also works');"
              "__ok(!window.__store['__projectsRoot']&&!!window.__store[" + json.dumps(pid) + "],'and it is remembered for this project only');")
-    results += run_page(page('autocorrect', 'autoCorrect', steps, tree, ['Paratext 9 Projects', 'PDT15'], project_id=pid), tmp, 'project-itself')
+    results += ps('project-itself', steps, tree, ['Paratext 9 Projects', 'PDT15'])
     steps = (choose_root + "await __until(()=>/not of the project open here/.test(" + folder_text + "));"
-             "__ok(/not of the project open here/.test(" + folder_text + ")&&document.getElementById('save').disabled,'another project\\'s folder is refused');")
-    results += run_page(page('autocorrect', 'autoCorrect', steps, tree, ['Paratext 9 Projects', 'OTHER'], project_id=pid), tmp, 'wrong-project')
+             "__ok(/not of the project open here/.test(" + folder_text + ")&&" + no_apply + ",'another project\\'s folder is refused');")
+    results += ps('wrong-project', steps, tree, ['Paratext 9 Projects', 'OTHER'])
 
-    # 8. Without showDirectoryPicker: the input, read only; Save downloads.
-    steps = (choose_root + loaded + "__ok(" + rows_ok + ",'fallback input: autocorrect.txt loaded');"
-             "__ok(/" + re.escape(common['FolderReadOnly'][:30]) + "/.test(" + folder_text + "),'fallback: says the folder is read only');"
-             "document.getElementById('save').click();await __until(()=>document.getElementById('message').textContent.length>0);"
-             "__ok(window.__written===null&&window.__downloaded==='autocorrect.txt','fallback: nothing written; Save offers a download');")
-    results += run_page(page('autocorrect', 'autoCorrect', steps, tree, ['Paratext 9 Projects', 'PDT15'], picker=False, project_id=pid), tmp, 'fallback')
+    # 9. Without showDirectoryPicker: the folder input (read only) still sends the files.
+    results += ps('fallback', choose_root + applied + "__ok(" + sent_ok + ",'fallback folder input: the files are sent');", tree, ['Paratext 9 Projects', 'PDT15'], picker=False)
 
     fails = [r for r in results if ': FAIL' in r]
     for r in results:
