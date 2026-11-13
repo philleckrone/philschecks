@@ -18,9 +18,8 @@ TOOLS = {
 }
 METHODS = {'en': 'English', 'es': 'Spanish', 'fr': 'French'}
 # Tools whose strings are WPF resource files (Strings.<lang>.xaml), not a Strings.cs.
-XAML_TOOLS = {
-    'autocorrect': os.path.join(REPO, 'AutoCorrect', 'AutoCorrectEditor', 'Resources'),
-}
+# (The AutoCorrect Editor's were; it was taken out in 0.8.0.)
+XAML_TOOLS = {}
 # Plugins whose methods have other names.
 TOOL_METHODS = {'project-settings': {'en': 'English', 'es': 'MakeSpanish', 'fr': 'MakeFrench'}}
 

@@ -163,67 +163,20 @@ def compare_ps(project, tmp):
     return diffs
 
 
-HOSTS['ac'] = os.path.join(HERE, 'autocorrect_oracle', 'AutoCorrectOracle.exe')
-
-
-def compare_ac(path, tmp):
-    """
-    One autocorrect.txt: the editor's Read+Write (C#) against ACCore's, byte for byte. Before the
-    P9 editor's 1.1 fix, it found "-->" with a culture-sensitive IndexOf, which misses it after
-    apostrophes ('''-->), and dropped such an entry when saving; ACCore keeps it. An oracle built
-    from the old code therefore differs on RUB: that case is reported as the old bug, not a difference.
-    """
-    tag = re.sub(r'[:\\/ ]', '_', path)[-80:]
-    a = os.path.join(tmp, tag + '_cs.txt')
-    b = os.path.join(tmp, tag + '_js.txt')
-    out_a = run([HOSTS['ac'], path, a])
-    out_b = js('ac', 'roundtrip', path, b)
-    with open(a, 'rb') as f:
-        x = f.read()
-    with open(b, 'rb') as f:
-        y = f.read()
-    if x == y and out_a == out_b:
-        return []
-    la = x.decode('utf-16').split('\r\n')
-    lb = y.decode('utf-16').split('\r\n')
-    extra = list(lb)
-    for line in la:
-        if line in extra:
-            extra.remove(line)
-    if len(lb) == len(la) + len(extra) and all('-->' in l and "'" in l.split('-->')[0] for l in extra):
-        print('%s: the P9 editor drops %s (culture-sensitive IndexOf); kept here' % (path, ', '.join(ascii(l) for l in extra)))
-        return []
-    return diff_lines(path + ' counts', out_a, out_b) + ['%s: written files differ (%d vs %d bytes)' % (path, len(x), len(y))]
-
-
-def autocorrect_files(roots):
-    out = []
-    for r in roots:
-        for d in sorted(os.listdir(r)):
-            f = os.path.join(r, d, 'autocorrect.txt')
-            if os.path.isfile(f):
-                out.append(f)
-    return out
-
-
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('tool', choices=['nm', 'nbt', 'ps', 'ac'])
+    ap.add_argument('tool', choices=['nm', 'nbt', 'ps'])
     ap.add_argument('--all')
     ap.add_argument('projects', nargs='*')
     a = ap.parse_args()
     projects = list(a.projects)
-    if a.tool == 'ac':
-        # --all ROOT;ROOT2: every autocorrect.txt in the projects of those folders.
-        if a.all:
-            projects += autocorrect_files(a.all.split(';'))
-    elif a.all:
+    if a.all:
         for n in sorted(os.listdir(a.all)):
             d = os.path.join(a.all, n)
             if os.path.isfile(os.path.join(d, 'Settings.xml')):
                 projects.append(d)
     tmp = tempfile.mkdtemp(prefix='tools_compare_')
-    fn = {'nm': compare_nm, 'nbt': compare_nbt, 'ps': compare_ps, 'ac': compare_ac}[a.tool]
+    fn = {'nm': compare_nm, 'nbt': compare_nbt, 'ps': compare_ps}[a.tool]
     total = 0
     with ThreadPoolExecutor(max_workers=6) as ex:
         for p, diffs in zip(projects, ex.map(lambda p: _safe(fn, p, tmp), projects)):

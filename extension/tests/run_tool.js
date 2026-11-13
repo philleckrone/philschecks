@@ -14,11 +14,11 @@ const vm = require('vm');
 const SRC = path.join(__dirname, '..', 'src');
 for (const f of JSON.parse(fs.readFileSync(path.join(SRC, 'order.json'), 'utf8')))
   vm.runInThisContext(fs.readFileSync(path.join(SRC, f), 'utf8'), { filename: f });
-for (const t of ['numbered-markers', 'numbered-book-titles', 'project-settings', 'autocorrect']) {
+for (const t of ['numbered-markers', 'numbered-book-titles', 'project-settings']) {
   const core = path.join(SRC, 'tools', t, 'core.js');
   if (fs.existsSync(core)) vm.runInThisContext(fs.readFileSync(core, 'utf8'), { filename: t + '/core.js' });
 }
-/* global PC, NMCore, NBTCore, PSCore, ACCore */
+/* global PC, NMCore, NBTCore, PSCore */
 
 function readUtf8(file) {
   const b = fs.readFileSync(file);
@@ -344,13 +344,8 @@ else if (tool === 'nm' && mode === 'convert') nmConvert(books, arg || 'All');
 else if (tool === 'nbt' && mode === 'scan') nbtPrintRows(nbtScan(nbtSource(folder)));
 else if (tool === 'nbt' && mode === 'suggest') nbtSuggest(nbtScan(nbtSource(folder)));
 else if (tool === 'nbt' && mode === 'fix') nbtFix(nbtSource(folder));
-else if (tool === 'ac' && mode === 'roundtrip') {
-  // AutoCorrectFileService.Read then Write, as the editor saves: ENTRIES n HEADER m
-  const r = ACCore.read(new Uint8Array(fs.readFileSync(folder)));
-  fs.writeFileSync(arg, Buffer.from(ACCore.write(r.headerLines, r.entries)));
-  console.log(`ENTRIES ${r.entries.length} HEADER ${r.headerLines.length}`);
-} else if (tool === 'ps' && mode === 'report') psReport(folder, arg || 'en', process.argv[6]);
+else if (tool === 'ps' && mode === 'report') psReport(folder, arg || 'en', process.argv[6]);
 else {
-  console.error('usage: run_tool.js nm scan|convert FOLDER [FAMILIES] | nbt scan|suggest|fix FOLDER [ROWS]');
+  console.error('usage: run_tool.js nm scan|convert FOLDER [FAMILIES] | nbt scan|suggest|fix FOLDER [ROWS] | ps report FOLDER LANG OUT');
   process.exit(2);
 }
