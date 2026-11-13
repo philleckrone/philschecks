@@ -123,9 +123,16 @@ def run_page(h, tmp, label):
     p = os.path.join(tmp, label + '.html')
     with open(p, 'w', encoding='utf-8') as f:
         f.write(h)
-    out = subprocess.run([EDGE, '--headless=new', '--disable-gpu', '--virtual-time-budget=8000', '--dump-dom', 'file:///' + p.replace('\\', '/')],
-                         capture_output=True, timeout=120).stdout.decode('utf-8', 'replace')
-    m = re.search(r'<pre id="result">(.*?)</pre>', out, re.S)
+    # Each page gets its own browser profile: runs that share the default one sometimes return an
+    # empty page. A page with no result is tried once more.
+    for attempt in range(2):
+        profile = os.path.join(tmp, '%s_profile%d' % (label, attempt))
+        out = subprocess.run([EDGE, '--headless=new', '--disable-gpu', '--user-data-dir=' + profile, '--virtual-time-budget=8000',
+                              '--dump-dom', 'file:///' + p.replace('\\', '/')],
+                             capture_output=True, timeout=120).stdout.decode('utf-8', 'replace')
+        m = re.search(r'<pre id="result">(.*?)</pre>', out, re.S)
+        if m:
+            break
     lines = htmlmod.unescape(m.group(1)).splitlines() if m else ['FAIL no result from the page']
     return ['%s: %s' % (label, l) for l in lines]
 
