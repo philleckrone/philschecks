@@ -1,0 +1,24 @@
+﻿Phils Custom (cms) Checks is a Paratext tool that brings Phil's custom checks to the Tools menu: 19 checks for titles, section headings, quotation marks, footnotes, figures, marker spaces, capitals and more, in English, Spanish and French. Nothing has to be copied into Paratext's cms folder. You choose a check and click Run, and Paratext's own check window opens. Set the check's options there before you run it: they decide what counts as a problem in your language, and Paratext keeps them with the project. A report check lists its findings in Paratext's results list, and many also open an HTML report with the context of each finding. This video runs Report of Capital at Verse on a sample project.
+
+Download Install_Phils_tools.exe from the Paratext Plugins folder, and tick Phils Custom (cms) Checks in it:
+https://short.do/HgUb7T
+
+0:17 How do I open Phils Custom (cms) Checks?
+0:27 Which checks are there?
+0:46 Can I run the checks in Spanish or French?
+0:59 How do I choose a check?
+1:17 Where can I read about a check's options?
+1:26 What happens when I click Run?
+1:42 Why should I set the options?
+2:00 How do I stop a word from being flagged?
+2:11 Can the check use my Biblical Terms and Wordlist?
+2:34 What does the report show?
+2:55 What does a capital that is not a name mean?
+3:08 Where else do the results appear?
+3:22 How do I install the tool?
+
+Created with Claude AI.
+Narration: AI-generated voice (Microsoft Azure AI Speech, voice "Jenny").
+Music from Free To Use
+Source: https://freetouse.com/music
+Coconut Kind of Love by Aetheric

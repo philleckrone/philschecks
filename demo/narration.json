@@ -1,0 +1,83 @@
+{
+  "cues": "{1} before a phrase shows box 1 of the step from there on, {0,2} boxes 0 and 2, {} none; the pointer goes on the first box named. Cues are not spoken or shown. 'q' is the step's question in the YouTube timecodes (youtubetext.txt).",
+  "youtube": {
+    "en": {
+      "about": "Phils Custom (cms) Checks is a Paratext tool that brings Phil's custom checks to the Tools menu: 19 checks for titles, section headings, quotation marks, footnotes, figures, marker spaces, capitals and more, in English, Spanish and French. Nothing has to be copied into Paratext's cms folder. You choose a check and click Run, and Paratext's own check window opens. Set the check's options there before you run it: they decide what counts as a problem in your language, and Paratext keeps them with the project. A report check lists its findings in Paratext's results list, and many also open an HTML report with the context of each finding. This video runs Report of Capital at Verse on a sample project.",
+      "download": "Download Install_Phils_tools.exe from the Paratext Plugins folder, and tick Phils Custom (cms) Checks in it:",
+      "link": "https://short.do/HgUb7T",
+      "credits": [
+        "Created with Claude AI.",
+        "Narration: AI-generated voice (Microsoft Azure AI Speech, voice \"Jenny\").",
+        "Music from Free To Use",
+        "Source: https://freetouse.com/music",
+        "Coconut Kind of Love by Aetheric"
+      ]
+    }
+  },
+  "steps": [
+    {
+      "id": "title",
+      "en": { "title": "Phils Custom (cms) Checks", "sub": "A Paratext tool: Phil's custom checks, ready to run", "text": "Phils Custom (cms) Checks is a Paratext tool. It brings a set of custom checks to the Tools menu, ready to run on your project." }
+    },
+    {
+      "id": "s00_menu",
+      "en": { "title": "Open it from the Tools menu", "q": "How do I open Phils Custom (cms) Checks?", "text": "In Paratext, open your project's menu. Then choose {0}Tools, then {1}Phils Custom (cms) Checks." }
+    },
+    {
+      "id": "s01_list",
+      "en": { "title": "Nineteen checks, ready to run", "q": "Which checks are there?", "text": "{0,1}The window lists the nineteen checks that come with the tool. Nothing has to be copied into Paratext's cms folder. {2}Kind says what a check does. A report only lists problems. A few checks can change your text, and they say so." }
+    },
+    {
+      "id": "s02_lang",
+      "en": { "title": "English, Spanish or French", "q": "Can I run the checks in Spanish or French?", "text": "{0}Each check comes in English, Spanish and French. Choose the language of the checks here. Their names, options and reports then use that language." }
+    },
+    {
+      "id": "s03_select",
+      "en": { "title": "Choose a check", "q": "How do I choose a check?", "text": "Let's run {0}Report of Capital at Verse. It finds a capital letter right after a verse number, when the verse before did not end a sentence. {1}The description says what the check looks for. {2}Help opens the check's guide, which explains every option." }
+    },
+    {
+      "id": "s04_help",
+      "en": { "title": "Every check has a guide", "q": "Where can I read about a check's options?", "text": "{0}The guide shows what the check finds, and what each option does. Read it before you set the options." }
+    },
+    {
+      "id": "s05_dialog",
+      "en": { "title": "Paratext's own check window", "q": "What happens when I click Run?", "text": "Run opens Paratext's own check window. {0}It runs on this project. {1}Choose the current book, or choose books. Here, all the books. {2}Before you run a check, open its Options." }
+    },
+    {
+      "id": "s06_final",
+      "en": { "title": "Set the options first", "q": "Why should I set the options?", "text": "{0}The options decide what counts as a problem in your language, so set them first. {1}Each option is explained here. {2}Sentence-final characters end a sentence. This project adds the colon, so a capital after a colon is not flagged." }
+    },
+    {
+      "id": "s07_words",
+      "en": { "title": "Words to ignore", "q": "How do I stop a word from being flagged?", "text": "{0}Words to ignore lists capitalized words that are always correct, {1}such as Padre, Señor and Dios. They are never flagged." }
+    },
+    {
+      "id": "s08_terms",
+      "en": { "title": "Let the project help", "q": "Can the check use my Biblical Terms and Wordlist?", "text": "{0}Ignore capitalized Biblical Terms: {1}with Yes here, names in the project's Biblical Terms renderings are not flagged. The next option does the same for words the Wordlist always capitalizes. Paratext keeps the options with the project, so you set them once. {2}Then click OK, and OK again to run the check." }
+    },
+    {
+      "id": "s09_report",
+      "en": { "title": "An HTML report", "q": "What does the report show?", "text": "Many of the checks also open an HTML report. {0}With this project's options, six places are left. {1}Each row shows the words around the verse number, with the capital in red. {2,3}Many times the capitalized word is a name, like Etní or Joelá, and that is fine." }
+    },
+    {
+      "id": "s09b_capital",
+      "en": { "title": "Which capitals need a change", "q": "What does a capital that is not a name mean?", "text": "{0}But a word like {0,1}Entonces most likely means that the verse before should end with final punctuation, or that the word should be lowercase. {2}Click a reference to go to that verse in Paratext." }
+    },
+    {
+      "id": "s10_list",
+      "en": { "title": "And Paratext's results list", "q": "Where else do the results appear?", "text": "{0}The same places are also listed in Paratext's results list, as with Paratext's own checks. Double-click a line, and {1}your text goes to that verse, ready to correct." }
+    },
+    {
+      "id": "sec_install",
+      "en": { "title": "Installing the tool", "q": "How do I install the tool?", "text": "Installing the tool." }
+    },
+    {
+      "id": "i5_ready",
+      "en": { "title": "Ready to use", "text": "Start Paratext again. {1,0}Phils Custom (cms) Checks is now on the Tools menu." }
+    },
+    {
+      "id": "end",
+      "en": { "title": "Phils Custom (cms) Checks", "sub": "Nineteen checks  ·  Set the options first  ·  HTML report and results list", "text": "Phils Custom (cms) Checks runs Phil's custom checks through Paratext's own check window. Set the options first. Then read the results in the report, and in Paratext's results list." }
+    }
+  ]
+}

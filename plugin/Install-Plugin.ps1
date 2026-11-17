@@ -66,7 +66,7 @@ $sourceDir  = Join-Path $PSScriptRoot $folderName
 # delete them, so the folder is not left behind with no plugin in it.
 $oldFiles = @()
 # SHA-256 of each package file, written by make_installers.py.
-$expectedHashes = @{ 'PhilsChecksPlugin.ptxplg' = '56837cc7929bf10e4716974fd30659aacb038cac84dd2dbea02a5b81497fab44' }
+$expectedHashes = @{ 'PhilsChecksPlugin.ptxplg' = '998d02a1d794a1a5375251c94df6f4d8c8b9f4f4a5c0b74fb2180a50b99cbb7f' }
 # Windows PowerShell by its real path, never through PATH or the current folder.
 $powershellExe = Join-Path ([Environment]::SystemDirectory) 'WindowsPowerShell\v1.0\powershell.exe'
 
