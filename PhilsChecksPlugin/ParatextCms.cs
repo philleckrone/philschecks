@@ -47,7 +47,7 @@ namespace PhilsChecks
         private PropertyInfo mainFormCurrent, mainFormWindows, mainFormActive;
         private Type textFormType;
         private FieldInfo textFormScrText;
-        private PropertyInfo textFormReference;
+        private PropertyInfo textFormReference, scrTextName;
         private PropertyInfo cmsDirectory;
 
         private ParatextCms()
@@ -128,7 +128,10 @@ namespace PhilsChecks
             mainFormWindows = Need(mainForm.GetProperty("ParatextWindows", Inst), "MainForm.ParatextWindows");
             mainFormActive = mainForm.GetProperty("ActiveWindow", Inst);   // optional
             textFormScrText = Field(textFormType, "loadedScrText", scrText);
-            textFormReference = textFormType.GetProperty("Reference", Inst);   // optional
+            // Paratext's own p6checkItem_Click passes NotNullReference.BookNum (1 when it is 0).
+            textFormReference = textFormType.GetProperty("NotNullReference", Inst)
+                ?? textFormType.GetProperty("Reference", Inst);   // optional
+            scrTextName = scrText.GetProperty("Name", Inst);      // optional
 
             Type collection = Need(scrText.Assembly.GetType("Paratext.Data.ScrTextCollection"), "ScrTextCollection");
             cmsDirectory = Need(collection.GetProperty("CMSDirectory", Stat), "ScrTextCollection.CMSDirectory");
@@ -165,9 +168,11 @@ namespace PhilsChecks
         }
 
         /// <summary>A runner for the window, bound to one project's ScrText.</summary>
-        public ICheckRunner ForProject(object project, PhilsShared.RtfViewer.Texts viewerTexts)
+        /// <param name="currentBook">The book Paratext's plugin API last reported (0 = unknown),
+        /// used when no text window of the project is found.</param>
+        public ICheckRunner ForProject(object project, PhilsShared.RtfViewer.Texts viewerTexts, Func<int> currentBook)
         {
-            return new ProjectRunner(this, ScrTextOf(project), viewerTexts);
+            return new ProjectRunner(this, ScrTextOf(project), viewerTexts, currentBook);
         }
 
         private sealed class ProjectRunner : ICheckRunner
@@ -175,17 +180,19 @@ namespace PhilsChecks
             private readonly ParatextCms cms;
             private readonly object scrText;
             private readonly PhilsShared.RtfViewer.Texts viewerTexts;
+            private readonly Func<int> currentBook;
 
-            public ProjectRunner(ParatextCms cms, object scrText, PhilsShared.RtfViewer.Texts viewerTexts)
+            public ProjectRunner(ParatextCms cms, object scrText, PhilsShared.RtfViewer.Texts viewerTexts, Func<int> currentBook)
             {
                 this.cms = cms;
                 this.scrText = scrText;
                 this.viewerTexts = viewerTexts;
+                this.currentBook = currentBook;
             }
 
             public void Run(CheckInfo check, string folder, IWin32Window owner)
             {
-                cms.Run(check, folder, scrText, owner, viewerTexts);
+                cms.Run(check, folder, scrText, owner, viewerTexts, currentBook);
             }
         }
 
@@ -193,7 +200,7 @@ namespace PhilsChecks
         /// Shows Paratext's window for the check (modal), on the project; OK runs the check from
         /// <paramref name="folder"/> through Paratext's runner.
         /// </summary>
-        private void Run(CheckInfo check, string folder, object scrText, IWin32Window owner, PhilsShared.RtfViewer.Texts viewerTexts)
+        private void Run(CheckInfo check, string folder, object scrText, IWin32Window owner, PhilsShared.RtfViewer.Texts viewerTexts, Func<int> currentBook)
         {
             // checktext.* go to the cms folder: make sure it is there.
             string cms = cmsDirectory.GetValue(null, null) as string;
@@ -202,6 +209,12 @@ namespace PhilsChecks
             object item = CreateItem(check, folder);
             int book;
             object textForm = FindTextForm(scrText, out book);
+            if (book <= 0 && currentBook != null)
+            {
+                try { book = currentBook(); }
+                catch (Exception) { book = 0; }
+            }
+            if (book <= 0 || book > 999) book = 1;   // as Paratext's own menu does
             using (var dialog = (Form)CallInner(() => dialogCtor.Invoke(new object[] { item, scrText, book, textForm })))
             {
                 ReplaceOkHandler(dialog, folder);
@@ -365,11 +378,13 @@ namespace PhilsChecks
 
         /// <summary>
         /// The project's text window (the active one when it shows the project), as Paratext's own
-        /// menu passes it, so the results list goes to that window; and its book (1 without one).
+        /// menu passes it, so the results list goes to that window; and its book (0 when unknown).
+        /// The window's ScrText is matched by identity, then by project name (1.7: the user saw
+        /// Genesis on every check, the book used when no window was found).
         /// </summary>
         private object FindTextForm(object scrText, out int book)
         {
-            book = 1;
+            book = 0;
             object main = mainFormCurrent.GetValue(null, null);
             if (main == null) return null;
             var candidates = new List<object>();
@@ -381,29 +396,44 @@ namespace PhilsChecks
             var all = mainFormWindows.GetValue(main, null) as IEnumerable;
             if (all != null) candidates.AddRange(all.Cast<object>());
 
-            foreach (object w in candidates)
+            var forms = candidates.Where(w => w != null && textFormType.IsInstanceOfType(w)).ToList();
+            object found = forms.FirstOrDefault(w => ReferenceEquals(textFormScrText.GetValue(w), scrText));
+            if (found == null)
             {
-                if (w == null || !textFormType.IsInstanceOfType(w)) continue;
-                if (!ReferenceEquals(textFormScrText.GetValue(w), scrText)) continue;
-                book = BookOf(w);
-                return w;
+                string name = NameOf(scrText);
+                if (name != null)
+                    found = forms.FirstOrDefault(w => string.Equals(NameOf(textFormScrText.GetValue(w)), name, StringComparison.OrdinalIgnoreCase));
             }
-            return null;
+            if (found == null) return null;
+            book = BookOf(found);
+            return found;
+        }
+
+        private string NameOf(object scrText)
+        {
+            try
+            {
+                return scrText != null && scrTextName != null ? scrTextName.GetValue(scrText, null) as string : null;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
 
         private int BookOf(object textForm)
         {
             try
             {
-                if (textFormReference == null) return 1;
+                if (textFormReference == null) return 0;
                 object vref = textFormReference.GetValue(textForm, null);
                 PropertyInfo bookNum = vref != null ? vref.GetType().GetProperty("BookNum") : null;
                 int n = bookNum != null ? (int)bookNum.GetValue(vref, null) : 0;
-                return n > 0 ? n : 1;
+                return n > 0 ? n : 0;
             }
             catch (Exception)
             {
-                return 1;
+                return 0;
             }
         }
 

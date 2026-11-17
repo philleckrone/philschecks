@@ -11,7 +11,7 @@ namespace PhilsChecks
     public sealed class Strings
     {
         /// <summary>The tool's version: shown in the window title and reported to Paratext.</summary>
-        public const string ToolVersion = "1.6";
+        public const string ToolVersion = "1.7";
 
         public Lang Language;
         public string MenuText;

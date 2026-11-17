@@ -24,6 +24,11 @@ namespace PhilsChecks
 
         private IPluginHost host;
 
+        /// <summary>The book Paratext last reported (menu click or VerseRefChanged); 0 = none yet.
+        /// Used for "Current Book" when the project's text window is not found (1.7).</summary>
+        private static int lastBook;
+        private static bool followingRefs;
+
         public PhilsChecksPlugin()
         {
         }
@@ -91,6 +96,7 @@ namespace PhilsChecks
                     Report(strings, strings.OpenProjectFirst, null);
                     return;
                 }
+                FollowReferences(state);
 
                 if (cms == null && cmsProblem == null) cms = ParatextCms.Load(out cmsProblem);
                 if (cms == null)
@@ -108,7 +114,7 @@ namespace PhilsChecks
                     open.Activate();
                     return;
                 }
-                var form = new ChecksForm(bundle, cms.ForProject(project, strings.Viewer()), strings, project.ShortName);
+                var form = new ChecksForm(bundle, cms.ForProject(project, strings.Viewer(), () => lastBook), strings, project.ShortName);
                 OpenWindows[id] = form;
                 form.FormClosed += delegate
                 {
@@ -121,6 +127,27 @@ namespace PhilsChecks
             {
                 Report(strings, string.Format(strings.Error, ex.Message), ex);
             }
+        }
+
+        /// <summary>Takes the book of the window the command came from, and follows later moves.</summary>
+        private void FollowReferences(IParatextChildState state)
+        {
+            try
+            {
+                IVerseRef r = state.VerseRef;
+                if (r != null && r.BookNum > 0) lastBook = r.BookNum;
+                if (!followingRefs && host != null)
+                {
+                    host.VerseRefChanged += OnVerseRefChanged;
+                    followingRefs = true;
+                }
+            }
+            catch (Exception) { }
+        }
+
+        private static void OnVerseRefChanged(IPluginHost sender, IVerseRef newReference, SyncReferenceGroup group)
+        {
+            if (newReference != null && newReference.BookNum > 0) lastBook = newReference.BookNum;
         }
 
         private void Report(Strings strings, string message, Exception ex)
