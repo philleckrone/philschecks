@@ -103,7 +103,7 @@
         const files = {};
         const meta = {};
         chosen.forEach((f) => {
-          files[f.name] = f.text.replace(/^﻿/, '');
+          files[f.name] = f.text.replace(/^\uFEFF/, '');
           meta[f.name] = { length: f.length, mtime: f.mtime };
         });
         await useFiles(files, meta);
@@ -133,7 +133,7 @@
           { label: S.Cancel, value: false },
         ], box);
         if (!ok || box.value.trim().length === 0) return;
-        await useFiles({ 'Settings.xml': box.value.replace(/^﻿/, '') }, {});
+        await useFiles({ 'Settings.xml': box.value.replace(/^\uFEFF/, '') }, {});
       }
 
       function save() {

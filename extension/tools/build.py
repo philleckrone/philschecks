@@ -6,7 +6,9 @@
 #
 # Extensions may only require papi modules (no relative files, no fs, no eval), so src/main.js is
 # one file: the files of src/order.json (the checks), then the web view HTML, the built-in usfm.sty and the version as string
-# constants, then src/main.js. The result is syntax-checked with Paratext 10's own Node.
+# constants, then src/main.js. The result is syntax-checked with Paratext 10's own Node, then
+# linted with ESLint (tools/eslint at the repo root, also run with Paratext 10's Node); ESLint
+# errors stop the build. `--no-lint` skips ESLint.
 import json, os, shutil, subprocess, sys, zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -21,6 +23,8 @@ P10 = os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Programs', 'paratext-10-
 MS = os.path.join(ROOT, '..', '..', 'Marker_Spaces', 'extension')
 MS_USFM_STY = os.path.join(MS, '..', 'MarkerSpacesPlugin', 'Resources', 'usfm.sty')
 COPY = ['manifest.json', 'package.json', 'contributions', 'assets']
+sys.path.insert(0, os.path.join(ROOT, '..', '..', 'tools', 'eslint'))
+import eslint_runner  # noqa: E402
 
 
 def read(path):
@@ -40,15 +44,16 @@ def marker_spaces():
         sys.exit('Marker Spaces main.js no longer ends with its exports')
     ms_main = ms_main.replace(tail, 'return { activate, deactivate, openWindow };')
     ms_version = json.loads(read(os.path.join(MS, 'manifest.json')))['version']
+    # (text, source path or None): the path lets ESLint report at the source line.
     return [
-        read(os.path.join(MS, 'src', 'core.js')),
-        'const MS_VERSION = %s;' % js_string(ms_version),
-        'const MS_WEB_VIEW_HTML = %s;' % js_string(read(os.path.join(MS, 'src', 'marker-spaces.web-view.html'))),
-        'const MS_USFM_STY = %s;' % js_string(read(MS_USFM_STY)),
-        '// Marker Spaces backend (Marker_Spaces/extension/src/main.js), in its own scope.',
-        'const MarkerSpaces = (function () {',
-        ms_main,
-        '})();',
+        (read(os.path.join(MS, 'src', 'core.js')), os.path.join(MS, 'src', 'core.js')),
+        ('const MS_VERSION = %s;' % js_string(ms_version), None),
+        ('const MS_WEB_VIEW_HTML = %s;' % js_string(read(os.path.join(MS, 'src', 'marker-spaces.web-view.html'))), None),
+        ('const MS_USFM_STY = %s;' % js_string(read(MS_USFM_STY)), None),
+        ('// Marker Spaces backend (Marker_Spaces/extension/src/main.js), in its own scope.', None),
+        ('const MarkerSpaces = (function () {', None),
+        (ms_main, os.path.join(MS, 'src', 'main.js')),
+        ('})();', None),
     ]
 
 
@@ -99,18 +104,20 @@ def tool_window(folder):
 
 
 def tools():
-    parts = [read(os.path.join(SRC, 'tools', 'shared.js'))]
+    shared = os.path.join(SRC, 'tools', 'shared.js')
+    parts = [(read(shared), shared)]
     for folder, prefix, name in TOOLS:
         d = os.path.join(SRC, 'tools', folder)
         parts += [
-            read(os.path.join(d, 'core.js')),
-            'const %s_STRINGS = %s;' % (prefix, json.dumps(json.loads(read(os.path.join(d, 'strings.json'))), ensure_ascii=True)),
-            'const %s_WINDOW_HTML = %s;' % (prefix, js_string(tool_window(folder))),
-        ] + ['const %s = %s;' % (const, js_string(read(os.path.join(ROOT, '..', '..', rel)))) for const, rel in TOOL_DATA.get(folder, [])] + [
-            '// %s backend (src/tools/%s/backend.js), in its own scope.' % (name, folder),
-            'const %s = (function () {' % name,
-            read(os.path.join(d, 'backend.js')),
-            '})();',
+            (read(os.path.join(d, 'core.js')), os.path.join(d, 'core.js')),
+            ('const %s_STRINGS = %s;' % (prefix, json.dumps(json.loads(read(os.path.join(d, 'strings.json'))), ensure_ascii=True)), None),
+            ('const %s_WINDOW_HTML = %s;' % (prefix, js_string(tool_window(folder))), None),
+        ] + [('const %s = %s;' % (const, js_string(read(os.path.join(ROOT, '..', '..', rel)))), None)
+             for const, rel in TOOL_DATA.get(folder, [])] + [
+            ('// %s backend (src/tools/%s/backend.js), in its own scope.' % (name, folder), None),
+            ('const %s = (function () {' % name, None),
+            (read(os.path.join(d, 'backend.js')), os.path.join(d, 'backend.js')),
+            ('})();', None),
         ]
     return parts
 
@@ -139,16 +146,19 @@ def main():
         else:
             shutil.copy2(src, os.path.join(DIST, name))
 
-    main_js = '\n'.join([
-        '// Phils Custom (cms) Checks %s for Paratext 10. Built by tools/build.py from src/ - do not edit.' % version,
-        "'use strict';",
-    ] + [read(os.path.join(SRC, f)) for f in json.loads(read(os.path.join(SRC, 'order.json')))] + [
-        'const PCX_VERSION = %s;' % js_string(version),
-        'const PCX_WEB_VIEW_HTML = %s;' % js_string(read(os.path.join(SRC, 'phils-checks.web-view.html'))),
-        'const PCX_USFM_STY = %s;' % js_string(read(USFM_STY)),
+    backend = eslint_runner.Unit('main.js', 'node', requires=['@papi/backend'])
+    for text, path in [
+        ('// Phils Custom (cms) Checks %s for Paratext 10. Built by tools/build.py from src/ - do not edit.' % version, None),
+        ("'use strict';", None),
+    ] + [(read(os.path.join(SRC, f)), os.path.join(SRC, f)) for f in json.loads(read(os.path.join(SRC, 'order.json')))] + [
+        ('const PCX_VERSION = %s;' % js_string(version), None),
+        ('const PCX_WEB_VIEW_HTML = %s;' % js_string(read(os.path.join(SRC, 'phils-checks.web-view.html'))), None),
+        ('const PCX_USFM_STY = %s;' % js_string(read(USFM_STY)), None),
     ] + marker_spaces() + tools() + [
-        read(os.path.join(SRC, 'main.js')),
-    ])
+        (read(os.path.join(SRC, 'main.js')), os.path.join(SRC, 'main.js')),
+    ]:
+        backend.add(text, path)
+    main_js = backend.code()
     out = os.path.join(DIST, 'src', 'main.js')
     with open(out, 'w', encoding='utf-8', newline='\n') as f:
         f.write(main_js)
@@ -160,11 +170,20 @@ def main():
             sys.stderr.write(p.stderr.decode('utf-8', 'replace'))
             sys.exit('main.js has a syntax error')
         # The web view's own script is checked too (it runs in the window, not in Node).
-        windows = [('phils-checks.web-view.html', read(os.path.join(SRC, 'phils-checks.web-view.html')), '__PCX_BOOT__'),
-                   ('marker-spaces.web-view.html', read(os.path.join(MS, 'src', 'marker-spaces.web-view.html')), '__MS_BOOT__')]
-        windows += [(folder + '/window.html', tool_window(folder), '__BOOT__') for folder, _, _ in TOOLS]
-        for html_path, html, boot in windows:
+        # (name, html, boot placeholder, source files the window's script lines come from)
+        common = os.path.join(SRC, 'tools', 'window-common.html')
+        windows = [('phils-checks.web-view.html', read(os.path.join(SRC, 'phils-checks.web-view.html')), '__PCX_BOOT__',
+                    [os.path.join(SRC, 'phils-checks.web-view.html')]),
+                   ('marker-spaces.web-view.html', read(os.path.join(MS, 'src', 'marker-spaces.web-view.html')), '__MS_BOOT__',
+                    [os.path.join(MS, 'src', 'marker-spaces.web-view.html')])]
+        windows += [(folder + '/window.html', tool_window(folder), '__BOOT__',
+                     [os.path.join(SRC, 'tools', folder, 'window.html'), common]) for folder, _, _ in TOOLS]
+        units = [backend]
+        for html_path, html, boot, sources in windows:
             script = all_scripts(html).replace(boot, '{"strings":{}}')
+            unit = eslint_runner.Unit(html_path, 'browser', requires=['@papi/frontend'])
+            unit.add(script, search=sources)
+            units.append(unit)
             tmp = os.path.join(ROOT, 'dist', 'webview-check.js')
             with open(tmp, 'w', encoding='utf-8') as f:
                 f.write(script)
@@ -173,6 +192,10 @@ def main():
             if p.returncode != 0:
                 sys.stderr.write(p.stderr.decode('utf-8', 'replace'))
                 sys.exit('the web view script %s has a syntax error' % os.path.basename(html_path))
+        if '--no-lint' not in sys.argv:
+            errors, _ = eslint_runner.lint(units)
+            if errors:
+                sys.exit('ESLint found %d error(s); fix them or build with --no-lint' % errors)
     else:
         print('Paratext 10 not found: syntax not checked')
 
