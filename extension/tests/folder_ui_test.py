@@ -213,6 +213,34 @@ def main():
     # 9. Without showDirectoryPicker: the folder input (read only) still sends the files.
     results += ps('fallback', choose_root + applied + "__ok(" + sent_ok + ",'fallback folder input: the files are sent');", tree, ['Paratext 9 Projects', 'PDT15'], picker=False)
 
+    # 10. AutoCorrect Editor (back in 0.9.0): the only tool that writes through the folder.
+    ac_bytes = json.dumps(files.get('autocorrect.txt', []))
+    loaded = "await __until(()=>document.querySelectorAll('#grid tr').length>1);"
+    rows_ok = "document.querySelectorAll('#grid tr').length===ACCore.read(new Uint8Array(" + ac_bytes + ")).entries.length+1"
+
+    def ac(label, steps, t, pick, **kw):
+        return run_page(page('autocorrect', 'autoCorrect', steps, t, pick, project_id=pid, **kw), tmp, label)
+
+    steps = (choose_root + loaded +
+             "__ok(" + rows_ok + ",'AutoCorrect: the PDT15 subfolder was found and autocorrect.txt loaded');"
+             "__ok(window.__pickerMode==='readwrite','AutoCorrect: the folder is asked for read/write');"
+             "const orig=ACCore.read(new Uint8Array(" + ac_bytes + "));"
+             "document.getElementById('pattern').value='zz_';document.getElementById('output').value='a\\u0331';document.getElementById('add').click();"
+             "document.getElementById('save').click();await __until(()=>window.__written!==null);"
+             "const want=ACCore.write(orig.headerLines,orig.entries.concat([ACCore.entry('zz_','a\\u0331')]));"
+             "const got=window.__written?new Uint8Array(window.__written):null;"
+             "__ok(!!got&&got.length===want.length&&got.every((b,i)=>b===want[i]),'AutoCorrect: Save wrote exactly what ACCore writes ('+want.length+' bytes)');")
+    results += ac('ac-save', steps, tree, ['Paratext 9 Projects'])
+    steps = (loaded + "__ok(" + rows_ok + "&&window.__pickerCalls===0&&window.__asked===0,'AutoCorrect: a remembered folder opens with no click');")
+    results += ac('ac-no-click', steps, tree, [], remember=['Paratext 9 Projects'])
+    steps = (choose_root + "await __until(()=>/not of the project open here/.test(" + folder_text + "));"
+             "__ok(document.getElementById('save').disabled,'AutoCorrect: another project\\'s folder is refused, Save is off');")
+    results += ac('ac-wrong-project', steps, tree, ['Paratext 9 Projects', 'OTHER'])
+    steps = (choose_root + loaded + "__ok(" + rows_ok + ",'AutoCorrect fallback input: autocorrect.txt loaded');"
+             "document.getElementById('save').click();await __until(()=>document.getElementById('message').textContent.length>0);"
+             "__ok(window.__written===null&&window.__downloaded==='autocorrect.txt','AutoCorrect fallback: nothing written; Save offers a download');")
+    results += ac('ac-fallback', steps, tree, ['Paratext 9 Projects', 'PDT15'], picker=False)
+
     fails = [r for r in results if ': FAIL' in r]
     for r in results:
         print(r)

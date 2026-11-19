@@ -12,7 +12,7 @@
 //    sets their options, runs one and shows its report, whose references go to the verse;
 //  - Marker Spaces (built in from Marker_Spaces/extension, see tools/build.py): its check, and its
 //    fix window, opened from the list.
-/* global PC, PCX_WEB_VIEW_HTML, PCX_USFM_STY, PCX_VERSION, MarkerSpaces, NumberedMarkers, NumberedBookTitles, NM_STRINGS, NBT_STRINGS, ProjectSettings, PS_STRINGS */
+/* global PC, PCX_WEB_VIEW_HTML, PCX_USFM_STY, PCX_VERSION, MarkerSpaces, NumberedMarkers, NumberedBookTitles, NM_STRINGS, NBT_STRINGS, ProjectSettings, PS_STRINGS, AutoCorrect, AC_STRINGS */
 const papi = require('@papi/backend');
 
 const { logger } = papi;
@@ -184,6 +184,7 @@ async function listChecks(lang) {
     ['numberedMarkers', NM_STRINGS, 'changes'],
     ['numberedBookTitles', NBT_STRINGS, 'changes'],
     ['projectSettings', PS_STRINGS, 'report'],
+    ['autoCorrect', AC_STRINGS, 'changes'],
   ].forEach(([id, strings, kind]) => {
     const s = Object.assign({}, strings.en, strings[L.code] || {});
     list.push({ id, name: s.Title, description: s.Description, kind, opens: `${id}.open`, options: [] });
@@ -498,6 +499,7 @@ async function activate(context) {
   await NumberedMarkers.activate(context);
   await NumberedBookTitles.activate(context);
   await ProjectSettings.activate(context);
+  await AutoCorrect.activate(context);
   logger.info(`Phils Checks is finished activating (${PC.checks.size} checks + Marker Spaces)`);
 }
 

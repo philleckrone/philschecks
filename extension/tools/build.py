@@ -65,11 +65,13 @@ TOOLS = [
     ('numbered-markers', 'NM', 'NumberedMarkers'),
     ('numbered-book-titles', 'NBT', 'NumberedBookTitles'),
     ('project-settings', 'PS', 'ProjectSettings'),
+    ('autocorrect', 'AC', 'AutoCorrect'),
 ]
 # Tools whose window runs the core itself (/*TOOL_CORE*/ in window.html): the core, then this
 # call with the tool's data (a JSON string of the file named).
-# (The AutoCorrect Editor used this; it was taken out in 0.8.0 and kept in removed/autocorrect.)
-WINDOW_CORE = {}
+WINDOW_CORE = {
+    'autocorrect': ('ACCore.init(%s);', os.path.join('AutoCorrect', 'AutoCorrectEditor', 'Services', 'UnicodeBlockService.cs')),
+}
 # Data files a tool's backend reads, embedded as string constants (name, path from the repo).
 TOOL_DATA = {
     'project-settings': [
@@ -108,8 +110,10 @@ def tools():
     parts = [(read(shared), shared)]
     for folder, prefix, name in TOOLS:
         d = os.path.join(SRC, 'tools', folder)
+        # A WINDOW_CORE tool's core runs in its window only (built into window.html).
+        if folder not in WINDOW_CORE:
+            parts.append((read(os.path.join(d, 'core.js')), os.path.join(d, 'core.js')))
         parts += [
-            (read(os.path.join(d, 'core.js')), os.path.join(d, 'core.js')),
             ('const %s_STRINGS = %s;' % (prefix, json.dumps(json.loads(read(os.path.join(d, 'strings.json'))), ensure_ascii=True)), None),
             ('const %s_WINDOW_HTML = %s;' % (prefix, js_string(tool_window(folder))), None),
         ] + [('const %s = %s;' % (const, js_string(read(os.path.join(ROOT, '..', '..', rel)))), None)

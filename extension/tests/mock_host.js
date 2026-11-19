@@ -223,7 +223,7 @@ async function main() {
   check(!!html && html.indexOf('"projectId":"TESTPROJECTID"') >= 0 && html.indexOf('__PCX_BOOT__') < 0, 'window HTML has the project');
 
   const list = await papi.commands.sendCommand('philsChecks.list', LANG);
-  check(list.length === PC.checks.size + 4, `list gives ${list.length} entries: ${list.map((c) => c.name).join(' | ')}`);
+  check(list.length === PC.checks.size + 5, `list gives ${list.length} entries: ${list.map((c) => c.name).join(' | ')}`);
   const msItem = list.find((c) => c.id === 'markerSpaces');
   check(!!msItem && msItem.opens === 'markerSpaces.open' && msItem.kind === 'changes', 'Marker Spaces is in the list and opens its window');
   // As the window's "Open" button does: no editor id, the window's project.
@@ -482,7 +482,7 @@ async function testProjectSettings(list) {
   check(back.source === 'p10' && back.html === back.html && writes.length === before, 'projectSettings: back to the Paratext 10 settings; nothing written');
 }
 
-/** What the window sends after the user chooses the project folder. */
+/** What the window sends after the user chooses the project folder; and the AutoCorrect Editor. */
 async function testFolderTools(list) {
   // Numbered Book Titles with the folder's BookNames.xml.
   const bn = path.join(folder, 'BookNames.xml');
@@ -502,8 +502,16 @@ async function testFolderTools(list) {
   const absent = PC.report.format(S.FileAbsent, ['autocorrect.txt']);
   check(res.html.indexOf(PSCore.enc(absent)) >= 0 && res.html.indexOf(PSCore.enc(PC.report.format(S.FileUnknown, ['autocorrect.txt']))) < 0,
     'projectSettings with a chosen folder: a file not in it is "No", not "not known"');
-  // The AutoCorrect Editor was taken out in 0.8.0 (Paratext 10 has no autocorrect yet).
-  check(!list.some((c) => c.id === 'autoCorrect') && !commands.has('autoCorrect.open'), 'no AutoCorrect Editor in the list or the commands');
+  // The AutoCorrect Editor: listed, opens, carries its core and blocks; the backend writes nothing.
+  ['open', 'scan', 'apply', 'scanWith'].forEach((c) => check(commands.has('autoCorrect.' + c), 'command autoCorrect.' + c + ' registered'));
+  const it = list.find((c) => c.id === 'autoCorrect');
+  check(!!it && it.kind === 'changes' && it.opens === 'autoCorrect.open', `autoCorrect is in the list (${it && it.name})`);
+  const before = writes.length;
+  const w = await papi.commands.sendCommand('autoCorrect.open', undefined, PROJECT);
+  const html = papi.lastWebView.content;
+  check(w === 'W1' && papi.lastWebView.webViewType === 'philsChecks.autoCorrect' && html.indexOf('ACCore.init(') >= 0 && html.indexOf('Combining Diacritical Marks') >= 0 && html.indexOf('/*TOOL_CORE*/') < 0,
+    'autoCorrect window opened with its core and the Unicode blocks');
+  check(writes.length === before, 'autoCorrect: the backend wrote nothing');
 }
 
 main().catch((e) => {
